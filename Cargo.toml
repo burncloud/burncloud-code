@@ -11,7 +11,7 @@ keywords = ["burncloud", "code", "execution"]
 categories = ["development-tools"]
 
 [dependencies]
-burncloud-common = "0.1."
+burncloud-common = "0.1.9"
 burncloud-core = "0.1.9"
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
