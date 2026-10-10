@@ -1,7 +1,8 @@
 # BurnCloud Agent Manager — 细粒度模块设计与实施需求
 
 **版本：v1.1（细化补充稿）**  
-**上位文档：** [BAM PRD v1.0](./bam-prd.md)  
+**上位文档：** [BAM PRD v1.0](./bam-prd.md)
+**代码级设计：** [BAM v1.2 — Rust 架构、SQLite Schema、GitHub API 与恢复协议](./bam-implementation-v1.2.md)  
 **状态：** 需求与实现设计，非现有功能声明。
 
 ## 0. 约束与验收原则
