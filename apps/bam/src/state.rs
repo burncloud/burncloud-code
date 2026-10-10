@@ -1,7 +1,19 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TaskState {
-    Backlog, Ready, Running, WaitCi, FixCi, Review, ReadyForReview,
-    AwaitingMerge, Merged, VerifyMain, Done, Blocked, Paused, Cancelled,
+    Backlog,
+    Ready,
+    Running,
+    WaitCi,
+    FixCi,
+    Review,
+    ReadyForReview,
+    AwaitingMerge,
+    Merged,
+    VerifyMain,
+    Done,
+    Blocked,
+    Paused,
+    Cancelled,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
