@@ -642,6 +642,53 @@ fn row_to_merge_authorization(row: &rusqlite::Row<'_>) -> rusqlite::Result<Merge
     })
 }
 
+/// Record one repair attempt against its task (M09-10). Re-recording the same attempt id
+/// updates its outcome instead of failing, so a retried write stays idempotent.
+pub fn record_repair_attempt(
+    connection: &Connection,
+    attempt_id: &str,
+    task_id: &str,
+    fingerprint: &str,
+    attempt_number: u32,
+    outcome: &str,
+) -> Result<(), String> {
+    if attempt_id.trim().is_empty()
+        || task_id.trim().is_empty()
+        || fingerprint.trim().is_empty()
+        || outcome.trim().is_empty()
+    {
+        return Err("invalid repair attempt".into());
+    }
+    if attempt_number == 0 {
+        return Err("repair attempt numbers start at 1".into());
+    }
+    connection
+        .execute(
+            "INSERT INTO repair_attempts(
+                attempt_id,task_id,fingerprint,attempt_number,outcome
+             ) VALUES (?1,?2,?3,?4,?5)
+             ON CONFLICT(attempt_id) DO UPDATE SET outcome=excluded.outcome",
+            params![attempt_id, task_id, fingerprint, attempt_number, outcome],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// How many attempts have been recorded for one fingerprint of a task.
+pub fn repair_attempt_count(
+    connection: &Connection,
+    task_id: &str,
+    fingerprint: &str,
+) -> Result<i64, String> {
+    connection
+        .query_row(
+            "SELECT COUNT(*) FROM repair_attempts WHERE task_id=?1 AND fingerprint=?2",
+            params![task_id, fingerprint],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

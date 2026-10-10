@@ -6,6 +6,7 @@ pub mod git;
 pub mod github;
 pub mod merge_guard;
 pub mod recovery;
+pub mod repair;
 pub mod state;
 pub mod storage;
 pub mod worktree;
