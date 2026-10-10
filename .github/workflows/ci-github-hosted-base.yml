@@ -105,15 +105,15 @@ jobs:
           sudo apt-get install -y libssl-dev pkg-config
 
       - name: Cargo Fmt
-        if: inputs.check == 'fmt' && steps.rust_target.outputs.run == 'true'
+        if: inputs.check == 'fmt' && (hashFiles('src/main.rs', 'src/lib.rs') != '')
         run: cargo fmt --all -- --check
 
       - name: Cargo Test
-        if: inputs.check == 'test' && steps.rust_target.outputs.run == 'true'
+        if: inputs.check == 'test' && (hashFiles('src/main.rs', 'src/lib.rs') != '')
         run: cargo test --all-targets --all-features
 
       - name: Cargo Clippy
-        if: inputs.check == 'clippy' && steps.rust_target.outputs.run == 'true'
+        if: inputs.check == 'clippy' && (hashFiles('src/main.rs', 'src/lib.rs') != '')
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       # BAM is a standalone Cargo workspace and must be checked separately.
