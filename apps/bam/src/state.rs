@@ -105,6 +105,8 @@ mod tests {
     }
     #[test]
     fn completed_tasks_are_terminal() {
-        assert!(TaskState::Done.transition(TaskState::Ready, Evidence::ExplicitResume).is_err());
+        assert!(TaskState::Done
+            .transition(TaskState::Ready, Evidence::ExplicitResume)
+            .is_err());
     }
 }
