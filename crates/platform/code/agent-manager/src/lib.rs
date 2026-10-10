@@ -1,4 +1,5 @@
 pub mod config;
+pub mod evidence;
 pub mod git;
 pub mod github;
 pub mod recovery;
