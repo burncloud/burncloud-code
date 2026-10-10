@@ -22,7 +22,11 @@ pub fn open(path: &Path) -> Result<Connection, String> {
         params![1],
     )
     .map_err(|e| e.to_string())?;
-    tx.execute("INSERT OR IGNORE INTO schema_migrations(version) VALUES (2)", []).map_err(|e|e.to_string())?;
+    tx.execute(
+        "INSERT OR IGNORE INTO schema_migrations(version) VALUES (2)",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(connection)
 }
