@@ -51,11 +51,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f src/main.rs || -f src/lib.rs ]]; then
+          if [[ -f src/main.rs || -f src/lib.rs || -f crates/platform/code/agent-manager/Cargo.toml ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No src/main.rs or src/lib.rs exists yet; Rust check is skipped."
+            echo "::notice::No Rust target exists yet; Rust check is skipped."
           fi
 
       - name: Detect dependency-policy changes
@@ -115,6 +115,20 @@ jobs:
       - name: Cargo Clippy
         if: inputs.check == 'clippy' && steps.rust_target.outputs.run == 'true'
         run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # BAM is a standalone Cargo workspace and must be checked separately.
+      # All execution stays on GitHub Actions; local builds/tests are forbidden.
+      - name: BAM Cargo Fmt
+        if: inputs.check == 'fmt' && hashFiles('crates/platform/code/agent-manager/Cargo.toml') != ''
+        run: cargo fmt --manifest-path crates/platform/code/agent-manager/Cargo.toml --all -- --check
+
+      - name: BAM Cargo Test
+        if: inputs.check == 'test' && hashFiles('crates/platform/code/agent-manager/Cargo.toml') != ''
+        run: cargo test --manifest-path crates/platform/code/agent-manager/Cargo.toml --all-targets --all-features
+
+      - name: BAM Cargo Clippy
+        if: inputs.check == 'clippy' && hashFiles('crates/platform/code/agent-manager/Cargo.toml') != ''
+        run: cargo clippy --manifest-path crates/platform/code/agent-manager/Cargo.toml --all-targets --all-features -- -D warnings
 
       - name: Ensure cargo-deny
         if: inputs.check == 'deny' && steps.rust_target.outputs.run == 'true' && steps.deny_scope.outputs.run == 'true'
