@@ -480,10 +480,6 @@ error[E0308]: mismatched types
 error: could not compile `bam` (lib) due to 1 previous error
 ";
 
-    fn budget() -> RepairBudget {
-        RepairBudget::new(3, 12).unwrap()
-    }
-
     fn loop_with(per_error: u32, total: u32) -> RepairLoop {
         RepairLoop::new(RepairBudget::new(per_error, total).unwrap(), 5, 60).unwrap()
     }
