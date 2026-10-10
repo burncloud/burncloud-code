@@ -488,6 +488,160 @@ pub fn load_checkpoint(
         .map_err(|e| e.to_string())
 }
 
+/// A one-shot, user-granted merge authorization (M12-A). Times are stored as unix
+/// seconds in a TEXT column and compared in Rust, never lexicographically in SQL.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MergeAuthorization {
+    pub authorization_id: String,
+    pub repo_id: i64,
+    pub pr_number: u64,
+    pub head_sha: String,
+    pub actor: String,
+    pub expires_at: Option<i64>,
+    pub revoked_at: Option<i64>,
+}
+
+impl MergeAuthorization {
+    /// Valid for this repository, pull request and head sha at `now`.
+    pub fn is_active_for(&self, repo_id: i64, pr_number: u64, head_sha: &str, now: i64) -> bool {
+        self.repo_id == repo_id
+            && self.pr_number == pr_number
+            && self.head_sha == head_sha
+            && self.revoked_at.is_none()
+            && self.expires_at.is_none_or(|deadline| now < deadline)
+    }
+}
+
+/// Register a merge authorization. Re-registering the same id with the same scope is a
+/// no-op; reusing an id for a different scope is refused.
+pub fn register_merge_authorization(
+    connection: &Connection,
+    authorization: &MergeAuthorization,
+) -> Result<bool, String> {
+    if authorization.authorization_id.trim().is_empty()
+        || authorization.actor.trim().is_empty()
+        || authorization.head_sha.len() != 40
+        || !authorization
+            .head_sha
+            .chars()
+            .all(|c| c.is_ascii_hexdigit())
+        || authorization.repo_id <= 0
+        || authorization.pr_number == 0
+    {
+        return Err("invalid merge authorization".into());
+    }
+    let existing: Option<MergeAuthorization> = connection
+        .query_row(
+            "SELECT authorization_id,repo_id,pr_number,head_sha,actor,
+                    CAST(expires_at AS INTEGER),CAST(revoked_at AS INTEGER)
+             FROM merge_authorizations WHERE authorization_id=?1",
+            [&authorization.authorization_id],
+            row_to_merge_authorization,
+        )
+        .optional()
+        .map_err(|e| e.to_string())?;
+    if let Some(stored) = existing {
+        let same = stored.repo_id == authorization.repo_id
+            && stored.pr_number == authorization.pr_number
+            && stored.head_sha == authorization.head_sha
+            && stored.actor == authorization.actor
+            && stored.expires_at == authorization.expires_at;
+        return if same {
+            Ok(false)
+        } else {
+            Err("authorization id reused with a different scope".into())
+        };
+    }
+    connection
+        .execute(
+            "INSERT INTO merge_authorizations(
+                authorization_id,repo_id,pr_number,head_sha,actor,expires_at,revoked_at
+             ) VALUES (?1,?2,?3,?4,?5,?6,NULL)",
+            params![
+                authorization.authorization_id,
+                authorization.repo_id,
+                authorization.pr_number,
+                authorization.head_sha,
+                authorization.actor,
+                authorization.expires_at.map(|value| value.to_string())
+            ],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+/// Revoke an authorization (M12-C). A second revocation reports false.
+pub fn revoke_merge_authorization(
+    connection: &Connection,
+    authorization_id: &str,
+    now: i64,
+) -> Result<bool, String> {
+    if authorization_id.trim().is_empty() {
+        return Err("authorization id must not be empty".into());
+    }
+    let updated = connection
+        .execute(
+            "UPDATE merge_authorizations SET revoked_at=?1
+             WHERE authorization_id=?2 AND revoked_at IS NULL",
+            params![now.to_string(), authorization_id],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(updated == 1)
+}
+
+pub fn load_merge_authorization(
+    connection: &Connection,
+    authorization_id: &str,
+) -> Result<Option<MergeAuthorization>, String> {
+    if authorization_id.trim().is_empty() {
+        return Err("authorization id must not be empty".into());
+    }
+    connection
+        .query_row(
+            "SELECT authorization_id,repo_id,pr_number,head_sha,actor,
+                    CAST(expires_at AS INTEGER),CAST(revoked_at AS INTEGER)
+             FROM merge_authorizations WHERE authorization_id=?1",
+            [authorization_id],
+            row_to_merge_authorization,
+        )
+        .optional()
+        .map_err(|e| e.to_string())
+}
+
+/// All authorizations ever registered for a pull request, newest first. Revoked and
+/// expired rows are returned too, so an audit can explain why a merge was refused.
+pub fn merge_authorizations_for(
+    connection: &Connection,
+    repo_id: i64,
+    pr_number: u64,
+) -> Result<Vec<MergeAuthorization>, String> {
+    let mut statement = connection
+        .prepare(
+            "SELECT authorization_id,repo_id,pr_number,head_sha,actor,
+                    CAST(expires_at AS INTEGER),CAST(revoked_at AS INTEGER)
+             FROM merge_authorizations WHERE repo_id=?1 AND pr_number=?2
+             ORDER BY created_at DESC, authorization_id",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = statement
+        .query_map(params![repo_id, pr_number], row_to_merge_authorization)
+        .map_err(|e| e.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
+}
+
+fn row_to_merge_authorization(row: &rusqlite::Row<'_>) -> rusqlite::Result<MergeAuthorization> {
+    Ok(MergeAuthorization {
+        authorization_id: row.get(0)?,
+        repo_id: row.get(1)?,
+        pr_number: row.get(2)?,
+        head_sha: row.get(3)?,
+        actor: row.get(4)?,
+        expires_at: row.get(5)?,
+        revoked_at: row.get(6)?,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -756,6 +910,60 @@ mod tests {
             lease_epoch: None,
         };
         assert!(save_checkpoint(&conn, &checkpoint).is_err());
+    }
+
+    #[test]
+    fn merge_authorizations_are_scoped_revocable_and_idempotent() {
+        let temp = tempfile::tempdir().unwrap();
+        let conn = open(&temp.path().join("state.db")).unwrap();
+        let head = "0bb0783aa176922343ec1897313b4a4cb75c09dd";
+        let authorization = MergeAuthorization {
+            authorization_id: "auth-1".into(),
+            repo_id: 1,
+            pr_number: 33,
+            head_sha: head.into(),
+            actor: "rustburn".into(),
+            expires_at: Some(2_000),
+            revoked_at: None,
+        };
+        assert!(register_merge_authorization(&conn, &authorization).unwrap());
+        // Re-registering the identical grant is a no-op.
+        assert!(!register_merge_authorization(&conn, &authorization).unwrap());
+        // Reusing the id for another pull request is refused.
+        let reuse = MergeAuthorization {
+            pr_number: 34,
+            ..authorization.clone()
+        };
+        assert!(register_merge_authorization(&conn, &reuse).is_err());
+        // Invalid grants are refused outright.
+        let mut invalid = authorization.clone();
+        invalid.head_sha = "abc".into();
+        assert!(register_merge_authorization(&conn, &invalid).is_err());
+        let mut anonymous = authorization.clone();
+        anonymous.authorization_id = "auth-2".into();
+        anonymous.actor = "  ".into();
+        assert!(register_merge_authorization(&conn, &anonymous).is_err());
+
+        let stored = load_merge_authorization(&conn, "auth-1").unwrap().unwrap();
+        assert_eq!(stored, authorization);
+        assert!(stored.is_active_for(1, 33, head, 1_999));
+        assert!(!stored.is_active_for(1, 33, head, 2_000));
+        assert!(!stored.is_active_for(1, 34, head, 1_000));
+        assert!(!stored.is_active_for(1, 33, "c5820a2c719a4c4c257cf94362de46c428a59bd4", 1_000));
+
+        assert_eq!(merge_authorizations_for(&conn, 1, 33).unwrap().len(), 1);
+        assert!(merge_authorizations_for(&conn, 1, 99).unwrap().is_empty());
+        assert!(load_merge_authorization(&conn, "missing")
+            .unwrap()
+            .is_none());
+
+        assert!(revoke_merge_authorization(&conn, "auth-1", 1_500).unwrap());
+        assert!(!revoke_merge_authorization(&conn, "auth-1", 1_600).unwrap());
+        assert!(!revoke_merge_authorization(&conn, "missing", 1_600).unwrap());
+        assert!(revoke_merge_authorization(&conn, "  ", 1_600).is_err());
+        let revoked = load_merge_authorization(&conn, "auth-1").unwrap().unwrap();
+        assert_eq!(revoked.revoked_at, Some(1_500));
+        assert!(!revoked.is_active_for(1, 33, head, 1_000));
     }
 }
 
