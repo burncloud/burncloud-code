@@ -93,7 +93,9 @@ mod tests {
     }
     #[test]
     fn cannot_merge_without_authoritative_remote_evidence() {
-        assert!(TaskState::AwaitingMerge.transition(TaskState::Merged, Evidence::None).is_err());
+        assert!(TaskState::AwaitingMerge
+            .transition(TaskState::Merged, Evidence::None)
+            .is_err());
     }
     #[test]
     fn cannot_claim_ci_success_without_evidence() {
