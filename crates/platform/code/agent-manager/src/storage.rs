@@ -274,7 +274,7 @@ mod persistence_tests {
             .unwrap();
         let renewed = renew_lease(&conn, &lease, 9, 20).unwrap().unwrap();
         assert_eq!(renewed.expires_at, 29);
-        assert!(renew_lease(&conn, &lease, 16, 5).unwrap().is_some());
+        assert!(renew_lease(&conn, &lease, 16, 5).unwrap().is_none());
         assert!(renew_lease(&conn, &renewed, 29, 5).unwrap().is_none());
     }
 
