@@ -1,31 +1,31 @@
 requirement_id,module,source_type,requirement_summary,implementation_path,test_id,ci_job,head_sha,evidence_url,status
-LOCAL-001,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-002,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-003,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-004,M08,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-005,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-006,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-007,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-008,M08,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-009,M08,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-010,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-011,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-LOCAL-012,M07,POLICY,"Mandatory local execution policy",,,,,,NOT_IMPLEMENTED
-M01-01,M01,PRD,"支持 GitHub CLI 认证",,,,,,NOT_IMPLEMENTED
+LOCAL-001,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-002,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-003,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-004,M08,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-005,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-006,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-007,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-008,M08,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-009,M08,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-010,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-011,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+LOCAL-012,M07,POLICY,"Mandatory local execution policy",crates/platform/code/agent-manager/src/config.rs,config::tests::compilation_cannot_be_enabled; local_tests_cannot_be_enabled; merge_cannot_be_enabled,,,,IN_PROGRESS
+M01-01,M01,PRD,"支持 GitHub CLI 认证",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
 M01-02,M01,PRD,"支持 GitHub App 认证",,,,,,NOT_IMPLEMENTED
-M01-03,M01,PRD,"支持 GitHub Token 配置",,,,,,NOT_IMPLEMENTED
-M01-04,M01,PRD,"不在配置文件保存明文 Token",,,,,,NOT_IMPLEMENTED
+M01-03,M01,PRD,"支持 GitHub Token 配置",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
+M01-04,M01,PRD,"不在配置文件保存明文 Token",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
 M01-05,M01,PRD,"验证仓库读写权限",,,,,,NOT_IMPLEMENTED
 M01-06,M01,PRD,"验证 Projects V2 权限",,,,,,NOT_IMPLEMENTED
 M01-07,M01,PRD,"自动处理 API Rate Limit",,,,,,NOT_IMPLEMENTED
 M01-08,M01,PRD,"GitHub API 异常自动恢复",,,,,,NOT_IMPLEMENTED
-M01-09,M01,PRD,"Token 失效停止写操作",,,,,,NOT_IMPLEMENTED
-M01-10,M01,PRD,"支持权限自检",,,,,,NOT_IMPLEMENTED
-M01-A,M01,DESIGN,"凭证提供者",,,,,,NOT_IMPLEMENTED
-M01-B,M01,DESIGN,"权限探测",,,,,,NOT_IMPLEMENTED
-M01-C,M01,DESIGN,"HTTP/GraphQL 客户端",,,,,,NOT_IMPLEMENTED
-M01-D,M01,DESIGN,"最小授权域",,,,,,NOT_IMPLEMENTED
-M01-E,M01,DESIGN,"凭证脱敏",,,,,,NOT_IMPLEMENTED
+M01-09,M01,PRD,"Token 失效停止写操作",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
+M01-10,M01,PRD,"支持权限自检",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
+M01-A,M01,DESIGN,"凭证提供者",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
+M01-B,M01,DESIGN,"权限探测",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
+M01-C,M01,DESIGN,"HTTP/GraphQL 客户端",crates/platform/code/agent-manager/src/github.rs,github::tests::endpoints_are_strictly_validated; github_response_shapes_are_typed,BAM / Actual Fmt Clippy Test,2101ed8050c7d442dfc86df8817574dec0d4b811,https://github.com/burncloud/burncloud-code/actions/runs/38075385046,MERGED
+M01-D,M01,DESIGN,"最小授权域",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
+M01-E,M01,DESIGN,"凭证脱敏",crates/platform/code/agent-manager/src/github.rs,credential and write-guard tests (not yet merged),,,,IN_PROGRESS
 M02-01,M02,PRD,"读取组织 Projects #1",,,,,,NOT_IMPLEMENTED
 M02-02,M02,PRD,"枚举项目所有条目",,,,,,NOT_IMPLEMENTED
 M02-03,M02,PRD,"识别 Issue 条目",,,,,,NOT_IMPLEMENTED
@@ -62,7 +62,7 @@ M03-12,M03,PRD,"排除人工冻结 Issue",,,,,,NOT_IMPLEMENTED
 M03-A,M03,DESIGN,"任务过滤",,,,,,NOT_IMPLEMENTED
 M03-B,M03,DESIGN,"规格提取",,,,,,NOT_IMPLEMENTED
 M03-C,M03,DESIGN,"父子及依赖",,,,,,NOT_IMPLEMENTED
-M03-D,M03,DESIGN,"现有 PR 解析",,,,,,NOT_IMPLEMENTED
+M03-D,M03,DESIGN,"现有 PR 解析",crates/platform/code/agent-manager/src/github.rs,github::tests::github_response_shapes_are_typed,,,,IN_PROGRESS
 M03-E,M03,DESIGN,"内容安全",,,,,,NOT_IMPLEMENTED
 M04-01,M04,PRD,"建立 Issue 依赖图",,,,,,NOT_IMPLEMENTED
 M04-02,M04,PRD,"检测循环依赖",,,,,,NOT_IMPLEMENTED
@@ -78,11 +78,11 @@ M04-11,M04,PRD,"任务失败不会阻塞全局调度",,,,,,NOT_IMPLEMENTED
 M04-12,M04,PRD,"支持暂停/恢复队列",,,,,,NOT_IMPLEMENTED
 M04-13,M04,PRD,"支持任务取消",,,,,,NOT_IMPLEMENTED
 M04-14,M04,PRD,"支持公平调度",,,,,,NOT_IMPLEMENTED
-M04-A,M04,DESIGN,"依赖图",,,,,,NOT_IMPLEMENTED
+M04-A,M04,DESIGN,"依赖图",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M04-B,M04,DESIGN,"就绪计算",,,,,,NOT_IMPLEMENTED
 M04-C,M04,DESIGN,"优先级",,,,,,NOT_IMPLEMENTED
 M04-D,M04,DESIGN,"并发预算",,,,,,NOT_IMPLEMENTED
-M04-E,M04,DESIGN,"唯一写锁",,,,,,NOT_IMPLEMENTED
+M04-E,M04,DESIGN,"唯一写锁",crates/platform/code/agent-manager/src/storage.rs,storage::persistence_tests::lease_exclusive_expiry_and_fencing,BAM / Actual Fmt Clippy Test,c81e81374ee4218adafcc3ec8299be319bea23ad,https://github.com/burncloud/burncloud-code/actions/runs/38074673543,MERGED
 M04-F,M04,DESIGN,"暂停取消",,,,,,NOT_IMPLEMENTED
 M05-01,M05,PRD,"接入 Codex CLI",,,,,,NOT_IMPLEMENTED
 M05-02,M05,PRD,"定义 AgentAdapter 接口",,,,,,NOT_IMPLEMENTED
@@ -100,30 +100,30 @@ M05-13,M05,PRD,"支持重新分配 Agent",,,,,,NOT_IMPLEMENTED
 M05-A,M05,DESIGN,"Adapter Trait",,,,,,NOT_IMPLEMENTED
 M05-B,M05,DESIGN,"命令调用",,,,,,NOT_IMPLEMENTED
 M05-C,M05,DESIGN,"指令构造",,,,,,NOT_IMPLEMENTED
-M05-D,M05,DESIGN,"会话记录",,,,,,NOT_IMPLEMENTED
+M05-D,M05,DESIGN,"会话记录",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M05-E,M05,DESIGN,"结果验证",,,,,,NOT_IMPLEMENTED
 M05-F,M05,DESIGN,"安全隔离",,,,,,NOT_IMPLEMENTED
-M06-01,M06,PRD,"为每个任务创建独立 worktree",,,,,,NOT_IMPLEMENTED
-M06-02,M06,PRD,"自动获取 main 最新 HEAD",,,,,,NOT_IMPLEMENTED
-M06-03,M06,PRD,"已有 PR 复用现有分支",,,,,,NOT_IMPLEMENTED
-M06-04,M06,PRD,"自动创建新任务分支",,,,,,NOT_IMPLEMENTED
-M06-05,M06,PRD,"自动检查工作区污染",,,,,,NOT_IMPLEMENTED
-M06-06,M06,PRD,"自动执行 git diff",,,,,,NOT_IMPLEMENTED
-M06-07,M06,PRD,"自动提交代码",,,,,,NOT_IMPLEMENTED
-M06-08,M06,PRD,"自动推送到 GitHub",,,,,,NOT_IMPLEMENTED
+M06-01,M06,PRD,"为每个任务创建独立 worktree",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-02,M06,PRD,"自动获取 main 最新 HEAD",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-03,M06,PRD,"已有 PR 复用现有分支",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-04,M06,PRD,"自动创建新任务分支",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-05,M06,PRD,"自动检查工作区污染",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-06,M06,PRD,"自动执行 git diff",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-07,M06,PRD,"自动提交代码",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-08,M06,PRD,"自动推送到 GitHub",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
 M06-09,M06,PRD,"自动创建 PR",,,,,,NOT_IMPLEMENTED
 M06-10,M06,PRD,"自动更新 PR 描述",,,,,,NOT_IMPLEMENTED
-M06-11,M06,PRD,"检测远端分支变化",,,,,,NOT_IMPLEMENTED
-M06-12,M06,PRD,"解决可确定的合并冲突",,,,,,NOT_IMPLEMENTED
-M06-13,M06,PRD,"清理已完成 worktree",,,,,,NOT_IMPLEMENTED
-M06-14,M06,PRD,"禁止 force push 覆盖他人工作",,,,,,NOT_IMPLEMENTED
-M06-A,M06,DESIGN,"仓库身份",,,,,,NOT_IMPLEMENTED
-M06-B,M06,DESIGN,"工作区分配",,,,,,NOT_IMPLEMENTED
-M06-C,M06,DESIGN,"已有分支接管",,,,,,NOT_IMPLEMENTED
-M06-D,M06,DESIGN,"变更检查",,,,,,NOT_IMPLEMENTED
-M06-E,M06,DESIGN,"提交与推送",,,,,,NOT_IMPLEMENTED
+M06-11,M06,PRD,"检测远端分支变化",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-12,M06,PRD,"解决可确定的合并冲突",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-13,M06,PRD,"清理已完成 worktree",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-14,M06,PRD,"禁止 force push 覆盖他人工作",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-A,M06,DESIGN,"仓库身份",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-B,M06,DESIGN,"工作区分配",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-C,M06,DESIGN,"已有分支接管",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-D,M06,DESIGN,"变更检查",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
+M06-E,M06,DESIGN,"提交与推送",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
 M06-F,M06,DESIGN,"PR Upsert",,,,,,NOT_IMPLEMENTED
-M06-G,M06,DESIGN,"冲突与清理",,,,,,NOT_IMPLEMENTED
+M06-G,M06,DESIGN,"冲突与清理",crates/platform/code/agent-manager/src/worktree.rs; src/git.rs,worktree::tests::*; git::tests::destructive_arguments_are_rejected_before_execution,BAM / Actual Fmt Clippy Test,0f1a60681fa484d10be5f660e69b65953b48b919,https://github.com/burncloud/burncloud-code/actions/runs/38077367154,MERGED
 M07-01,M07,PRD,"强制禁止本地执行任何 cargo test、单元测试或其他测试运行",,,,,,NOT_IMPLEMENTED
 M07-02,M07,PRD,"强制禁止本地 cargo clippy、cargo check、cargo build、rustc 等一切编译行为",,,,,,NOT_IMPLEMENTED
 M07-03,M07,PRD,"强制禁止所有本地构建，包括 Debug/Release、间接脚本和子进程",,,,,,NOT_IMPLEMENTED
@@ -160,9 +160,9 @@ M08-18,M08,PRD,"支持 CI 运行超时",,,,,,NOT_IMPLEMENTED
 M08-19,M08,PRD,"支持 Runner 故障分类",,,,,,NOT_IMPLEMENTED
 M08-20,M08,PRD,"避免高频无效轮询",,,,,,NOT_IMPLEMENTED
 M08-A,M08,DESIGN,"Required Policy 解析",,,,,,NOT_IMPLEMENTED
-M08-B,M08,DESIGN,"SHA 绑定",,,,,,NOT_IMPLEMENTED
-M08-C,M08,DESIGN,"状态规范化",,,,,,NOT_IMPLEMENTED
-M08-D,M08,DESIGN,"实际执行证据",,,,,,NOT_IMPLEMENTED
+M08-B,M08,DESIGN,"SHA 绑定",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
+M08-C,M08,DESIGN,"状态规范化",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
+M08-D,M08,DESIGN,"实际执行证据",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M08-E,M08,DESIGN,"日志取证",,,,,,NOT_IMPLEMENTED
 M08-F,M08,DESIGN,"Runner 故障",,,,,,NOT_IMPLEMENTED
 M08-G,M08,DESIGN,"Watcher",,,,,,NOT_IMPLEMENTED
@@ -179,12 +179,12 @@ M09-10,M09,PRD,"记录每次修复历史",,,,,,NOT_IMPLEMENTED
 M09-11,M09,PRD,"达到重试上限暂停",,,,,,NOT_IMPLEMENTED
 M09-12,M09,PRD,"禁止通过降低测试严格度修 CI",,,,,,NOT_IMPLEMENTED
 M09-A,M09,DESIGN,"错误分类",,,,,,NOT_IMPLEMENTED
-M09-B,M09,DESIGN,"错误指纹",,,,,,NOT_IMPLEMENTED
+M09-B,M09,DESIGN,"错误指纹",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M09-C,M09,DESIGN,"适用性判定",,,,,,NOT_IMPLEMENTED
 M09-D,M09,DESIGN,"修复上下文",,,,,,NOT_IMPLEMENTED
 M09-E,M09,DESIGN,"安全审查",,,,,,NOT_IMPLEMENTED
 M09-F,M09,DESIGN,"重测",,,,,,NOT_IMPLEMENTED
-M09-G,M09,DESIGN,"预算耗尽",,,,,,NOT_IMPLEMENTED
+M09-G,M09,DESIGN,"预算耗尽",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M10-01,M10,PRD,"自动创建 Draft PR",,,,,,NOT_IMPLEMENTED
 M10-02,M10,PRD,"自动关联 Issue",,,,,,NOT_IMPLEMENTED
 M10-03,M10,PRD,"读取现有 PR 状态",,,,,,NOT_IMPLEMENTED
@@ -235,36 +235,36 @@ M12-07,M12,PRD,"合并前检查 Review",,,,,,NOT_IMPLEMENTED
 M12-08,M12,PRD,"支持用户撤销授权",,,,,,NOT_IMPLEMENTED
 M12-09,M12,PRD,"记录合并操作审计",,,,,,NOT_IMPLEMENTED
 M12-10,M12,PRD,"不得修改 Ruleset 来获得合并权限",,,,,,NOT_IMPLEMENTED
-M12-A,M12,DESIGN,"授权登记",,,,,,NOT_IMPLEMENTED
+M12-A,M12,DESIGN,"授权登记",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M12-B,M12,DESIGN,"隔离凭证",,,,,,NOT_IMPLEMENTED
 M12-C,M12,DESIGN,"授权撤销",,,,,,NOT_IMPLEMENTED
 M12-D,M12,DESIGN,"最终核验",,,,,,NOT_IMPLEMENTED
 M12-E,M12,DESIGN,"预期 SHA 合并",,,,,,NOT_IMPLEMENTED
 M12-F,M12,DESIGN,"审计",,,,,,NOT_IMPLEMENTED
-M13-01,M13,PRD,"SQLite 保存任务状态",,,,,,NOT_IMPLEMENTED
-M13-02,M13,PRD,"保存 Issue/PR/Branch/SHA",,,,,,NOT_IMPLEMENTED
-M13-03,M13,PRD,"保存 Agent Session 信息",,,,,,NOT_IMPLEMENTED
-M13-04,M13,PRD,"保存 CI Run ID",,,,,,NOT_IMPLEMENTED
-M13-05,M13,PRD,"保存最近完成动作",,,,,,NOT_IMPLEMENTED
-M13-06,M13,PRD,"保存下一可执行动作",,,,,,NOT_IMPLEMENTED
+M13-01,M13,PRD,"SQLite 保存任务状态",crates/platform/code/agent-manager/migrations/0001_initial.sql; src/storage.rs,storage::tests::unique_active_issue_is_enforced; migration_is_idempotent,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
+M13-02,M13,PRD,"保存 Issue/PR/Branch/SHA",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
+M13-03,M13,PRD,"保存 Agent Session 信息",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
+M13-04,M13,PRD,"保存 CI Run ID",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
+M13-05,M13,PRD,"保存最近完成动作",crates/platform/code/agent-manager/src/storage.rs,storage::tests::checkpoint_round_trips_recovery_context,BAM / Actual Fmt Clippy Test,701b66ffc64eca53f5a1ef946f73530ae88fb979,https://github.com/burncloud/burncloud-code/actions/runs/38076040148,MERGED
+M13-06,M13,PRD,"保存下一可执行动作",crates/platform/code/agent-manager/src/storage.rs,storage::tests::checkpoint_round_trips_recovery_context,BAM / Actual Fmt Clippy Test,701b66ffc64eca53f5a1ef946f73530ae88fb979,https://github.com/burncloud/burncloud-code/actions/runs/38076040148,MERGED
 M13-07,M13,PRD,"崩溃后扫描孤儿任务",,,,,,NOT_IMPLEMENTED
 M13-08,M13,PRD,"恢复前重新读取 GitHub",,,,,,NOT_IMPLEMENTED
-M13-09,M13,PRD,"支持幂等任务执行",,,,,,NOT_IMPLEMENTED
+M13-09,M13,PRD,"支持幂等任务执行",crates/platform/code/agent-manager/src/recovery.rs; src/storage.rs,recovery::tests::intent_deduplicates_and_recovery_requires_confirmation; only_recoverable_intents_are_recorded,BAM / Actual Fmt Clippy Test,701b66ffc64eca53f5a1ef946f73530ae88fb979,https://github.com/burncloud/burncloud-code/actions/runs/38076040148,MERGED
 M13-10,M13,PRD,"本地损坏时可从 GitHub 重建",,,,,,NOT_IMPLEMENTED
-M13-A,M13,DESIGN,"Schema 与迁移",,,,,,NOT_IMPLEMENTED
-M13-B,M13,DESIGN,"Inbox 去重",,,,,,NOT_IMPLEMENTED
-M13-C,M13,DESIGN,"Outbox 意图",,,,,,NOT_IMPLEMENTED
-M13-D,M13,DESIGN,"检查点",,,,,,NOT_IMPLEMENTED
-M13-E,M13,DESIGN,"锁恢复",,,,,,NOT_IMPLEMENTED
-M13-F,M13,DESIGN,"GitHub 对账",,,,,,NOT_IMPLEMENTED
+M13-A,M13,DESIGN,"Schema 与迁移",crates/platform/code/agent-manager/migrations/0002_recovery.sql; 0003_recovery_storage.sql; 0004_outbox_canonical.sql; 0005_required_entities.sql; src/storage.rs,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores; legacy_parallel_schema_is_reconciled_on_open; migration_is_idempotent,BAM / Actual Fmt Clippy Test,1d870c2be62bafb42ffe3e1aee30285b0aa3c97a,https://github.com/burncloud/burncloud-code/actions/runs/38076343677,MERGED
+M13-B,M13,DESIGN,"Inbox 去重",crates/platform/code/agent-manager/src/storage.rs; src/recovery.rs,storage::tests::inbox_replay_is_idempotent; outbox_reuses_identical_intent_and_rejects_conflict; recovery::tests::intent_deduplicates_and_recovery_requires_confirmation,BAM / Actual Fmt Clippy Test,701b66ffc64eca53f5a1ef946f73530ae88fb979,https://github.com/burncloud/burncloud-code/actions/runs/38076040148,MERGED
+M13-C,M13,DESIGN,"Outbox 意图",crates/platform/code/agent-manager/src/storage.rs; src/recovery.rs,storage::tests::inbox_replay_is_idempotent; outbox_reuses_identical_intent_and_rejects_conflict; recovery::tests::intent_deduplicates_and_recovery_requires_confirmation,BAM / Actual Fmt Clippy Test,701b66ffc64eca53f5a1ef946f73530ae88fb979,https://github.com/burncloud/burncloud-code/actions/runs/38076040148,MERGED
+M13-D,M13,DESIGN,"检查点",crates/platform/code/agent-manager/src/storage.rs; src/recovery.rs,storage::tests::inbox_replay_is_idempotent; outbox_reuses_identical_intent_and_rejects_conflict; recovery::tests::intent_deduplicates_and_recovery_requires_confirmation,BAM / Actual Fmt Clippy Test,701b66ffc64eca53f5a1ef946f73530ae88fb979,https://github.com/burncloud/burncloud-code/actions/runs/38076040148,MERGED
+M13-E,M13,DESIGN,"锁恢复",crates/platform/code/agent-manager/src/storage.rs,storage::persistence_tests::lease_exclusive_expiry_and_fencing; renewal_and_bad_input,BAM / Actual Fmt Clippy Test,c81e81374ee4218adafcc3ec8299be319bea23ad,https://github.com/burncloud/burncloud-code/actions/runs/38074673543,MERGED
+M13-F,M13,DESIGN,"GitHub 对账",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M13-G,M13,DESIGN,"损坏应对",,,,,,NOT_IMPLEMENTED
-M14-A,M14,DESIGN,"固定状态",,,,,,NOT_IMPLEMENTED
-M14-B,M14,DESIGN,"CI 子状态",,,,,,NOT_IMPLEMENTED
-M14-C,M14,DESIGN,"转换 Guard",,,,,,NOT_IMPLEMENTED
-M14-D,M14,DESIGN,"合并转换",,,,,,NOT_IMPLEMENTED
-M14-E,M14,DESIGN,"完成转换",,,,,,NOT_IMPLEMENTED
-M14-F,M14,DESIGN,"暂停与阻塞",,,,,,NOT_IMPLEMENTED
-M14-G,M14,DESIGN,"事件日志",,,,,,NOT_IMPLEMENTED
+M14-A,M14,DESIGN,"固定状态",crates/platform/code/agent-manager/src/state.rs; src/storage.rs,state::tests::*; state::persisted_state_tests::*; storage::persistence_tests::guarded_transition_and_event_are_atomic,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
+M14-B,M14,DESIGN,"CI 子状态",crates/platform/code/agent-manager/src/state.rs,state::tests::cannot_claim_ci_success_without_evidence,,,,IN_PROGRESS
+M14-C,M14,DESIGN,"转换 Guard",crates/platform/code/agent-manager/src/state.rs; src/storage.rs,state::tests::*; state::persisted_state_tests::*; storage::persistence_tests::guarded_transition_and_event_are_atomic,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
+M14-D,M14,DESIGN,"合并转换",crates/platform/code/agent-manager/src/state.rs; src/storage.rs,state::tests::*; state::persisted_state_tests::*; storage::persistence_tests::guarded_transition_and_event_are_atomic,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
+M14-E,M14,DESIGN,"完成转换",crates/platform/code/agent-manager/src/state.rs; src/storage.rs,state::tests::*; state::persisted_state_tests::*; storage::persistence_tests::guarded_transition_and_event_are_atomic,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
+M14-F,M14,DESIGN,"暂停与阻塞",crates/platform/code/agent-manager/src/state.rs; src/storage.rs,state::tests::*; state::persisted_state_tests::*; storage::persistence_tests::guarded_transition_and_event_are_atomic,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
+M14-G,M14,DESIGN,"事件日志",crates/platform/code/agent-manager/src/state.rs; src/storage.rs,state::tests::*; state::persisted_state_tests::*; storage::persistence_tests::guarded_transition_and_event_are_atomic,BAM / Actual Fmt Clippy Test,a84f6151c7d012773d5aff0fbe778ed1a8e22e78,https://github.com/burncloud/burncloud-code/actions/runs/38074158118,MERGED
 M15-01,M15,PRD,"支持定时轮询",,,,,,NOT_IMPLEMENTED
 M15-02,M15,PRD,"支持 Webhook 接入",,,,,,NOT_IMPLEMENTED
 M15-03,M15,PRD,"监听 Issue 变化",,,,,,NOT_IMPLEMENTED
@@ -280,12 +280,12 @@ M15-A,M15,DESIGN,"Poller",,,,,,NOT_IMPLEMENTED
 M15-B,M15,DESIGN,"Webhook P1",,,,,,NOT_IMPLEMENTED
 M15-C,M15,DESIGN,"归一化",,,,,,NOT_IMPLEMENTED
 M15-D,M15,DESIGN,"去重排序",,,,,,NOT_IMPLEMENTED
-M15-E,M15,DESIGN,"完整对账",,,,,,NOT_IMPLEMENTED
+M15-E,M15,DESIGN,"完整对账",crates/platform/code/agent-manager/migrations/0005_required_entities.sql; 0002_recovery.sql,storage::tests::canonical_schema_has_documented_entities_and_no_parallel_stores,,,,IN_PROGRESS
 M15-F,M15,DESIGN,"退避",,,,,,NOT_IMPLEMENTED
-M16-01,M16,PRD,"bam init",,,,,,NOT_IMPLEMENTED
-M16-02,M16,PRD,"bam doctor",,,,,,NOT_IMPLEMENTED
+M16-01,M16,PRD,"bam init",crates/platform/code/agent-manager/src/main.rs,tests/cli.rs::init_is_idempotent_and_status_supports_json; doctor_fails_closed_when_required_executables_are_missing; human_status_remains_available,BAM / Actual Fmt Clippy Test,470cb09b0cefbe8c0634afcc2267676b3cd55320,https://github.com/burncloud/burncloud-code/actions/runs/38076155325,MERGED
+M16-02,M16,PRD,"bam doctor",crates/platform/code/agent-manager/src/main.rs,tests/cli.rs::init_is_idempotent_and_status_supports_json; doctor_fails_closed_when_required_executables_are_missing; human_status_remains_available,BAM / Actual Fmt Clippy Test,470cb09b0cefbe8c0634afcc2267676b3cd55320,https://github.com/burncloud/burncloud-code/actions/runs/38076155325,MERGED
 M16-03,M16,PRD,"bam run",,,,,,NOT_IMPLEMENTED
-M16-04,M16,PRD,"bam status",,,,,,NOT_IMPLEMENTED
+M16-04,M16,PRD,"bam status",crates/platform/code/agent-manager/src/main.rs,tests/cli.rs::init_is_idempotent_and_status_supports_json; doctor_fails_closed_when_required_executables_are_missing; human_status_remains_available,BAM / Actual Fmt Clippy Test,470cb09b0cefbe8c0634afcc2267676b3cd55320,https://github.com/burncloud/burncloud-code/actions/runs/38076155325,MERGED
 M16-05,M16,PRD,"bam tasks",,,,,,NOT_IMPLEMENTED
 M16-06,M16,PRD,"bam task inspect",,,,,,NOT_IMPLEMENTED
 M16-07,M16,PRD,"bam pause",,,,,,NOT_IMPLEMENTED
@@ -300,10 +300,10 @@ M16-15,M16,PRD,"bam merge authorize",,,,,,NOT_IMPLEMENTED
 M16-16,M16,PRD,"Windows 后台启动支持",,,,,,NOT_IMPLEMENTED
 M16-17,M16,PRD,"Linux systemd 支持",,,,,,NOT_IMPLEMENTED
 M16-18,M16,PRD,"结构化日志及敏感信息脱敏",,,,,,NOT_IMPLEMENTED
-M16-A,M16,DESIGN,"初始化",,,,,,NOT_IMPLEMENTED
-M16-B,M16,DESIGN,"自检",,,,,,NOT_IMPLEMENTED
+M16-A,M16,DESIGN,"初始化",crates/platform/code/agent-manager/src/main.rs,tests/cli.rs::init_is_idempotent_and_status_supports_json; doctor_fails_closed_when_required_executables_are_missing; human_status_remains_available,BAM / Actual Fmt Clippy Test,470cb09b0cefbe8c0634afcc2267676b3cd55320,https://github.com/burncloud/burncloud-code/actions/runs/38076155325,MERGED
+M16-B,M16,DESIGN,"自检",crates/platform/code/agent-manager/src/main.rs,tests/cli.rs::init_is_idempotent_and_status_supports_json; doctor_fails_closed_when_required_executables_are_missing; human_status_remains_available,BAM / Actual Fmt Clippy Test,470cb09b0cefbe8c0634afcc2267676b3cd55320,https://github.com/burncloud/burncloud-code/actions/runs/38076155325,MERGED
 M16-C,M16,DESIGN,"主调度",,,,,,NOT_IMPLEMENTED
-M16-D,M16,DESIGN,"观察",,,,,,NOT_IMPLEMENTED
+M16-D,M16,DESIGN,"观察",crates/platform/code/agent-manager/src/main.rs,tests/cli.rs::init_is_idempotent_and_status_supports_json; doctor_fails_closed_when_required_executables_are_missing; human_status_remains_available,BAM / Actual Fmt Clippy Test,470cb09b0cefbe8c0634afcc2267676b3cd55320,https://github.com/burncloud/burncloud-code/actions/runs/38076155325,MERGED
 M16-E,M16,DESIGN,"运维",,,,,,NOT_IMPLEMENTED
 M16-F,M16,DESIGN,"字段管理",,,,,,NOT_IMPLEMENTED
 M16-G,M16,DESIGN,"授权命令",,,,,,NOT_IMPLEMENTED
