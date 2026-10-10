@@ -88,9 +88,7 @@ impl AcceptanceCriteria {
 pub fn parse_acceptance(body: &str) -> AcceptanceCriteria {
     let mut criteria = AcceptanceCriteria::default();
     for line in body.lines() {
-        let trimmed = line
-            .trim()
-            .trim_start_matches(|c| c == '-' || c == '*' || c == ' ');
+        let trimmed = line.trim().trim_start_matches(['-', '*', ' ']);
         let Some((label, value)) = trimmed.split_once(':') else {
             continue;
         };
@@ -119,7 +117,7 @@ pub fn parse_acceptance(body: &str) -> AcceptanceCriteria {
 
 fn split_list(value: &str) -> Vec<String> {
     value
-        .split(|c: char| c == ',' || c == ';')
+        .split([',', ';'])
         .map(|item| item.trim().to_owned())
         .filter(|item| !item.is_empty())
         .collect()
