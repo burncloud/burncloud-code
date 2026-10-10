@@ -12,6 +12,7 @@ pub fn open(path: &Path) -> Result<Connection, String> {
     connection
         .execute_batch("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;")
         .map_err(|e| e.to_string())?;
+
     let tx = connection.transaction().map_err(|e| e.to_string())?;
     tx.execute_batch(include_str!("../migrations/0001_initial.sql"))
         .map_err(|e| e.to_string())?;
@@ -28,43 +29,45 @@ pub fn open(path: &Path) -> Result<Connection, String> {
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
+
+    apply_migration(
+        &mut connection,
+        3,
+        include_str!("../migrations/0003_recovery_storage.sql"),
+    )?;
     Ok(connection)
+}
+
+fn apply_migration(connection: &mut Connection, version: i64, sql: &str) -> Result<(), String> {
+    let applied: bool = connection
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version=?1)",
+            [version],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    if applied {
+        return Ok(());
+    }
+
+    let tx = connection
+        .transaction()
+        .map_err(|e| format!("start migration {version}: {e}"))?;
+    tx.execute_batch(sql)
+        .map_err(|e| format!("apply migration {version}: {e}"))?;
+    tx.execute(
+        "INSERT INTO schema_migrations(version) VALUES (?1)",
+        [version],
+    )
+    .map_err(|e| format!("record migration {version}: {e}"))?;
+    tx.commit()
+        .map_err(|e| format!("commit migration {version}: {e}"))
 }
 
 pub fn task_count(connection: &Connection) -> Result<i64, String> {
     connection
         .query_row("SELECT COUNT(*) FROM tasks", [], |row| row.get(0))
         .map_err(|e| e.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn migration_is_idempotent() {
-        let temp = tempfile::tempdir().unwrap();
-        let path = temp.path().join("nested/state.sqlite");
-        let first = open(&path).unwrap();
-        assert_eq!(task_count(&first).unwrap(), 0);
-        drop(first);
-        let second = open(&path).unwrap();
-        assert_eq!(task_count(&second).unwrap(), 0);
-        let versions: i64 = second
-            .query_row("SELECT COUNT(*) FROM schema_migrations", [], |row| {
-                row.get(0)
-            })
-            .unwrap();
-        assert_eq!(versions, 2);
-    }
-    #[test]
-    fn unique_active_issue_is_enforced() {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch(include_str!("../migrations/0001_initial.sql"))
-            .unwrap();
-        let insert = "INSERT INTO tasks(id,repo_id,issue_node_id,issue_number,state) VALUES (?1,1,'I1',1,'READY')";
-        conn.execute(insert, ["one"]).unwrap();
-        assert!(conn.execute(insert, ["two"]).is_err());
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -238,6 +241,285 @@ pub fn transition_task(
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())
+}
+
+pub fn record_inbox_event(connection: &Connection, event_key: &str) -> Result<bool, String> {
+    if event_key.trim().is_empty() {
+        return Err("event key must not be empty".into());
+    }
+    let inserted = connection
+        .execute(
+            "INSERT OR IGNORE INTO event_inbox(event_key) VALUES (?1)",
+            [event_key],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(inserted == 1)
+}
+
+pub fn mark_inbox_handled(connection: &Connection, event_key: &str) -> Result<bool, String> {
+    if event_key.trim().is_empty() {
+        return Err("event key must not be empty".into());
+    }
+    let updated = connection
+        .execute(
+            "UPDATE event_inbox SET handled_at=CURRENT_TIMESTAMP
+             WHERE event_key=?1 AND handled_at IS NULL",
+            [event_key],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(updated == 1)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OperationIntent {
+    pub operation_key: String,
+    pub task_id: Option<String>,
+    pub operation_type: String,
+    pub expected_head_sha: Option<String>,
+}
+
+pub fn enqueue_operation(
+    connection: &mut Connection,
+    intent: &OperationIntent,
+) -> Result<bool, String> {
+    if intent.operation_key.trim().is_empty() || intent.operation_type.trim().is_empty() {
+        return Err("operation key and type must not be empty".into());
+    }
+
+    let tx = connection
+        .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+        .map_err(|e| e.to_string())?;
+    let existing: Option<(Option<String>, String, Option<String>)> = tx
+        .query_row(
+            "SELECT task_id,operation_type,expected_head_sha
+             FROM operation_outbox WHERE operation_key=?1",
+            [&intent.operation_key],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    if let Some((task_id, operation_type, expected_head_sha)) = existing {
+        let same = task_id == intent.task_id
+            && operation_type == intent.operation_type
+            && expected_head_sha == intent.expected_head_sha;
+        if same {
+            tx.commit().map_err(|e| e.to_string())?;
+            return Ok(false);
+        }
+        return Err("operation key conflicts with a different intent".into());
+    }
+
+    tx.execute(
+        "INSERT INTO operation_outbox(
+            operation_key,task_id,operation_type,expected_head_sha,state
+         ) VALUES (?1,?2,?3,?4,'PENDING')",
+        params![
+            intent.operation_key,
+            intent.task_id,
+            intent.operation_type,
+            intent.expected_head_sha
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+pub fn confirm_operation(
+    connection: &Connection,
+    operation_key: &str,
+    remote_ref: Option<&str>,
+) -> Result<bool, String> {
+    if operation_key.trim().is_empty() {
+        return Err("operation key must not be empty".into());
+    }
+    let updated = connection
+        .execute(
+            "UPDATE operation_outbox
+             SET state='CONFIRMED',confirmed_at=CURRENT_TIMESTAMP,remote_ref=?1
+             WHERE operation_key=?2 AND state!='CONFIRMED'",
+            params![remote_ref, operation_key],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(updated == 1)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Checkpoint {
+    pub task_id: String,
+    pub last_action: String,
+    pub next_action: String,
+    pub head_sha: Option<String>,
+    pub worktree_path: Option<String>,
+    pub ci_run_id: Option<i64>,
+    pub lease_epoch: Option<i64>,
+}
+
+pub fn save_checkpoint(connection: &Connection, checkpoint: &Checkpoint) -> Result<(), String> {
+    if checkpoint.task_id.trim().is_empty()
+        || checkpoint.last_action.trim().is_empty()
+        || checkpoint.next_action.trim().is_empty()
+    {
+        return Err("checkpoint identity and actions must not be empty".into());
+    }
+
+    connection
+        .execute(
+            "INSERT INTO checkpoints(
+                task_id,last_action,next_action,head_sha,worktree_path,ci_run_id,lease_epoch,updated_at
+             ) VALUES (?1,?2,?3,?4,?5,?6,?7,CURRENT_TIMESTAMP)
+             ON CONFLICT(task_id) DO UPDATE SET
+                last_action=excluded.last_action,
+                next_action=excluded.next_action,
+                head_sha=excluded.head_sha,
+                worktree_path=excluded.worktree_path,
+                ci_run_id=excluded.ci_run_id,
+                lease_epoch=excluded.lease_epoch,
+                updated_at=CURRENT_TIMESTAMP",
+            params![
+                checkpoint.task_id,
+                checkpoint.last_action,
+                checkpoint.next_action,
+                checkpoint.head_sha,
+                checkpoint.worktree_path,
+                checkpoint.ci_run_id,
+                checkpoint.lease_epoch
+            ],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn load_checkpoint(
+    connection: &Connection,
+    task_id: &str,
+) -> Result<Option<Checkpoint>, String> {
+    if task_id.trim().is_empty() {
+        return Err("task id must not be empty".into());
+    }
+    connection
+        .query_row(
+            "SELECT task_id,last_action,next_action,head_sha,worktree_path,ci_run_id,lease_epoch
+             FROM checkpoints WHERE task_id=?1",
+            [task_id],
+            |row| {
+                Ok(Checkpoint {
+                    task_id: row.get(0)?,
+                    last_action: row.get(1)?,
+                    next_action: row.get(2)?,
+                    head_sha: row.get(3)?,
+                    worktree_path: row.get(4)?,
+                    ci_run_id: row.get(5)?,
+                    lease_epoch: row.get(6)?,
+                })
+            },
+        )
+        .optional()
+        .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migration_is_idempotent() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("nested/state.sqlite");
+        let first = open(&path).unwrap();
+        assert_eq!(task_count(&first).unwrap(), 0);
+        drop(first);
+        let second = open(&path).unwrap();
+        assert_eq!(task_count(&second).unwrap(), 0);
+        let versions: i64 = second
+            .query_row("SELECT COUNT(*) FROM schema_migrations", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(versions, 3);
+    }
+
+    #[test]
+    fn unique_active_issue_is_enforced() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(include_str!("../migrations/0001_initial.sql"))
+            .unwrap();
+        let insert = "INSERT INTO tasks(id,repo_id,issue_node_id,issue_number,state) VALUES (?1,1,'I1',1,'READY')";
+        conn.execute(insert, ["one"]).unwrap();
+        assert!(conn.execute(insert, ["two"]).is_err());
+    }
+
+    #[test]
+    fn inbox_replay_is_idempotent() {
+        let temp = tempfile::tempdir().unwrap();
+        let conn = open(&temp.path().join("state.db")).unwrap();
+        assert!(record_inbox_event(&conn, "delivery:1").unwrap());
+        for _ in 0..100 {
+            assert!(!record_inbox_event(&conn, "delivery:1").unwrap());
+        }
+        assert!(mark_inbox_handled(&conn, "delivery:1").unwrap());
+        assert!(!mark_inbox_handled(&conn, "delivery:1").unwrap());
+    }
+
+    #[test]
+    fn outbox_reuses_identical_intent_and_rejects_conflict() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut conn = open(&temp.path().join("state.db")).unwrap();
+        create_task(&conn, "t1", 1, "I_1", 1).unwrap();
+        let intent = OperationIntent {
+            operation_key: "push:t1:abc".into(),
+            task_id: Some("t1".into()),
+            operation_type: "push".into(),
+            expected_head_sha: Some("abc".into()),
+        };
+        assert!(enqueue_operation(&mut conn, &intent).unwrap());
+        assert!(!enqueue_operation(&mut conn, &intent).unwrap());
+
+        let conflicting = OperationIntent {
+            expected_head_sha: Some("def".into()),
+            ..intent.clone()
+        };
+        assert!(enqueue_operation(&mut conn, &conflicting).is_err());
+
+        assert!(confirm_operation(&conn, &intent.operation_key, Some("refs/heads/bam/t1")).unwrap());
+        assert!(!confirm_operation(&conn, &intent.operation_key, None).unwrap());
+    }
+
+    #[test]
+    fn checkpoint_round_trips_recovery_context() {
+        let temp = tempfile::tempdir().unwrap();
+        let conn = open(&temp.path().join("state.db")).unwrap();
+        create_task(&conn, "t1", 1, "I_1", 1).unwrap();
+
+        let checkpoint = Checkpoint {
+            task_id: "t1".into(),
+            last_action: "push".into(),
+            next_action: "wait_ci".into(),
+            head_sha: Some("0123456789abcdef".into()),
+            worktree_path: Some("/managed/t1".into()),
+            ci_run_id: Some(42),
+            lease_epoch: Some(7),
+        };
+        save_checkpoint(&conn, &checkpoint).unwrap();
+        assert_eq!(load_checkpoint(&conn, "t1").unwrap(), Some(checkpoint));
+    }
+
+    #[test]
+    fn checkpoint_requires_existing_task() {
+        let temp = tempfile::tempdir().unwrap();
+        let conn = open(&temp.path().join("state.db")).unwrap();
+        let checkpoint = Checkpoint {
+            task_id: "missing".into(),
+            last_action: "none".into(),
+            next_action: "sync".into(),
+            head_sha: None,
+            worktree_path: None,
+            ci_run_id: None,
+            lease_epoch: None,
+        };
+        assert!(save_checkpoint(&conn, &checkpoint).is_err());
+    }
 }
 
 #[cfg(test)]
