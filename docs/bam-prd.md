@@ -1,4 +1,6 @@
 # BurnCloud Agent Manager（BAM）
+
+> **全局 P0 强制策略：** [本地零编译、零测试；测试源码提交 GitHub 后仅由 Actions CI 执行](./bam-local-execution-policy.md)。本策略覆盖所有“默认禁止”或“只禁止全量”的旧措辞，不允许 Agent/配置豁免。
 ## 产品需求规格说明书 PRD + 技术设计 + 验收标准
 **版本：v1.0**
 
@@ -376,9 +378,9 @@ PR 关联优先根据 GitHub 原生关系、明确引用、head branch 和 Issue
 
 | ID | 需求 | 优先级 | 验收标准 |
 |---|---|---|---|
-| M07-01 | 默认禁止本地全量 cargo test | P0 | Agent 不执行重型测试 |
-| M07-02 | 默认禁止本地全量 cargo clippy | P0 | 不触发 Workspace 编译 |
-| M07-03 | 默认禁止本地 cargo build --release | P0 | 本地不执行 Release 编译 |
+| M07-01 | 强制禁止本地执行任何 cargo test、单元测试或其他测试运行 | P0 | 本地测试执行数为 0；测试源码 Push 后由 Actions 执行 |
+| M07-02 | 强制禁止本地 cargo clippy、cargo check、cargo build、rustc 等一切编译行为 | P0 | 本地编译执行数为 0 |
+| M07-03 | 强制禁止所有本地构建，包括 Debug/Release、间接脚本和子进程 | P0 | 禁止通过 Wrapper/Hook/IDE 绕过 |
 | M07-04 | 允许轻量检查 | P0 | git diff --check 可执行 |
 | M07-05 | 本地重型测试交给 GitHub Actions | P0 | Push 后触发远端验证 |
 | M07-06 | 控制 Agent 进程并发 | P0 | 不超过配置值 |
@@ -946,8 +948,8 @@ Coding Agent 不得直接获得合并能力。
 |---|---|
 | 默认并发 Agent | 2 |
 | 最大可配置并发 | 8 |
-| 本地全量 Rust 编译 | 默认禁止 |
-| 本地全量 Rust 测试 | 默认禁止 |
+| 本地任意 Rust 编译/构建/检查 | 强制禁止，0 次 |
+| 本地任意单元/集成/E2E 测试执行 | 强制禁止，0 次 |
 | GitHub 增量轮询 | 默认 60 秒 |
 | 任务状态持久化 | SQLite |
 | 非预期退出恢复 | 必须支持 |
