@@ -143,9 +143,7 @@ fn execute(cli: Cli) -> Result<(), String> {
                     "{{\"tasks\":{tasks},\"phase\":\"F0 foundation\",\"scheduler\":\"NOT_IMPLEMENTED\"}}"
                 );
             } else {
-                println!(
-                    "tasks: {tasks}\nphase: F0 foundation\nscheduler: NOT IMPLEMENTED"
-                );
+                println!("tasks: {tasks}\nphase: F0 foundation\nscheduler: NOT IMPLEMENTED");
             }
             Ok(())
         }
