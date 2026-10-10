@@ -1,4 +1,5 @@
 pub mod config;
+pub mod event_sync;
 pub mod evidence;
 pub mod git;
 pub mod github;
