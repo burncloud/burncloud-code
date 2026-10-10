@@ -1,6 +1,13 @@
+use bam::{
+    config::{Config, DEFAULT_CONFIG},
+    storage,
+};
 use clap::{Parser, Subcommand};
-use bam::{config::{Config, DEFAULT_CONFIG}, storage};
-use std::{fs, path::{Path, PathBuf}, process::ExitCode};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::ExitCode,
+};
 
 #[derive(Parser)]
 #[command(name = "bam", version, about = "BurnCloud Agent Manager F0 foundation")]
@@ -41,7 +48,10 @@ fn execute(cli: Cli) -> Result<(), String> {
     match cli.command {
         Commands::Init => {
             if cli.config.exists() {
-                return Err(format!("configuration already exists: {}", cli.config.display()));
+                return Err(format!(
+                    "configuration already exists: {}",
+                    cli.config.display()
+                ));
             }
             let parsed = Config::parse(DEFAULT_CONFIG)?;
             if let Some(parent) = cli.config.parent() {
@@ -61,7 +71,10 @@ fn execute(cli: Cli) -> Result<(), String> {
             println!("Local testing: forbidden");
             println!("Automatic merge: forbidden");
             println!("GitHub access and Codex availability: NOT VERIFIED (F1/F2)");
-            println!("Target: {}/{} project #{}", config.github.owner, config.github.repository, config.github.project_number);
+            println!(
+                "Target: {}/{} project #{}",
+                config.github.owner, config.github.repository, config.github.project_number
+            );
             Ok(())
         }
         Commands::Status => {
@@ -71,10 +84,15 @@ fn execute(cli: Cli) -> Result<(), String> {
                 return Err("state database does not exist; run bam init".into());
             }
             let conn = storage::open(&database)?;
-            println!("tasks: {}\nphase: F0 foundation\nscheduler: NOT IMPLEMENTED", storage::task_count(&conn)?);
+            println!(
+                "tasks: {}\nphase: F0 foundation\nscheduler: NOT IMPLEMENTED",
+                storage::task_count(&conn)?
+            );
             Ok(())
         }
-        Commands::Config { action: ConfigCommand::Check } => {
+        Commands::Config {
+            action: ConfigCommand::Check,
+        } => {
             Config::from_path(&cli.config)?;
             println!("configuration valid");
             Ok(())
