@@ -58,3 +58,8 @@ node_modules/
 evidence/
 .gstack/
 .gitnexus/
+
+# BAM local state and nested Cargo build output
+.bam/
+**/.bam/
+**/target/

@@ -1,10 +1,10 @@
 # BAM Rust Crate 与文件职责
 
 ## 现有项目兼容
-仓库已存在 `burncloud-code` package（检查时为 Rust edition 2021，version 0.1.9）；禁止未经单独 ADR 直接重命名/替换/改坏其公开 API。推荐独立 `apps/bam` 二进制，workspace 迁移必须做兼容性审查；这仅是待实施方案。
+仓库已存在 `burncloud-code` package（检查时为 Rust edition 2021，version 0.1.9）；禁止未经单独 ADR 直接重命名/替换/改坏其公开 API。推荐独立 `crates/platform/code/agent-manager` 二进制，workspace 迁移必须做兼容性审查；这仅是待实施方案。
 
 ```text
-apps/bam/src/
+crates/platform/code/agent-manager/src/
  main.rs
  config.rs
  domain/{ids,task,policy,evidence,events,transition}.rs
@@ -34,3 +34,7 @@ apps/bam/src/
 
 ## 工程门禁
 Rust 版本、依赖、CLI 参数以 CI 里构建证实；严禁开发机运行 cargo check/test/build/clippy/run。每个 public port 必须有 Fake 合约测试，测试写到对应 `tests` 单元，上传 GitHub Actions 执行。
+
+## F0 目录裁决
+
+以 [BAM 领域目录 ADR](./bam-directory-ownership.md) 为准。独立仓库通过 `crates/platform/code/agent-manager/` 表示与主仓库开发工具一致的 Ownership；保持单一 crate 和独立 Cargo manifest，不预先引入大量 crate。此前 `apps/bam` 仅为旧设计，不能作为新的实施路径。
