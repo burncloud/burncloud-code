@@ -30,12 +30,24 @@ pub fn open(path: &Path) -> Result<Connection, String> {
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
 
-    apply_migration(
-        &mut connection,
-        3,
-        include_str!("../migrations/0003_recovery_storage.sql"),
-    )?;
+    apply_migration_chain(&mut connection)?;
     Ok(connection)
+}
+
+/// Guarded migrations, applied in order and exactly once per database.
+/// 0001/0002 above are idempotent-and-unguarded; everything here may contain
+/// non-idempotent DDL (ALTER/DROP) because schema_migrations gates it.
+const GUARDED_MIGRATIONS: &[(i64, &str)] = &[
+    (3, include_str!("../migrations/0003_recovery_storage.sql")),
+    (4, include_str!("../migrations/0004_outbox_canonical.sql")),
+    (5, include_str!("../migrations/0005_required_entities.sql")),
+];
+
+fn apply_migration_chain(connection: &mut Connection) -> Result<(), String> {
+    for (version, sql) in GUARDED_MIGRATIONS {
+        apply_migration(connection, *version, sql)?;
+    }
+    Ok(())
 }
 
 fn apply_migration(connection: &mut Connection, version: i64, sql: &str) -> Result<(), String> {
@@ -275,34 +287,54 @@ pub struct OperationIntent {
     pub operation_key: String,
     pub task_id: Option<String>,
     pub operation_type: String,
+    /// Remote object the side effect targets (branch, PR, project item, issue).
+    pub target: String,
     pub expected_head_sha: Option<String>,
+}
+
+struct StoredIntent {
+    task_id: Option<String>,
+    operation_type: String,
+    target: Option<String>,
+    expected_head_sha: Option<String>,
 }
 
 pub fn enqueue_operation(
     connection: &mut Connection,
     intent: &OperationIntent,
 ) -> Result<bool, String> {
-    if intent.operation_key.trim().is_empty() || intent.operation_type.trim().is_empty() {
-        return Err("operation key and type must not be empty".into());
+    if intent.operation_key.trim().is_empty()
+        || intent.operation_type.trim().is_empty()
+        || intent.target.trim().is_empty()
+    {
+        return Err("operation key, type and target must not be empty".into());
     }
 
     let tx = connection
         .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
         .map_err(|e| e.to_string())?;
-    let existing: Option<(Option<String>, String, Option<String>)> = tx
+    let existing: Option<StoredIntent> = tx
         .query_row(
-            "SELECT task_id,operation_type,expected_head_sha
+            "SELECT task_id,operation_type,target,expected_head_sha
              FROM operation_outbox WHERE operation_key=?1",
             [&intent.operation_key],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            |row| {
+                Ok(StoredIntent {
+                    task_id: row.get(0)?,
+                    operation_type: row.get(1)?,
+                    target: row.get(2)?,
+                    expected_head_sha: row.get(3)?,
+                })
+            },
         )
         .optional()
         .map_err(|e| e.to_string())?;
 
-    if let Some((task_id, operation_type, expected_head_sha)) = existing {
-        let same = task_id == intent.task_id
-            && operation_type == intent.operation_type
-            && expected_head_sha == intent.expected_head_sha;
+    if let Some(stored) = existing {
+        let same = stored.task_id == intent.task_id
+            && stored.operation_type == intent.operation_type
+            && stored.target.as_deref() == Some(intent.target.as_str())
+            && stored.expected_head_sha == intent.expected_head_sha;
         if same {
             tx.commit().map_err(|e| e.to_string())?;
             return Ok(false);
@@ -312,18 +344,55 @@ pub fn enqueue_operation(
 
     tx.execute(
         "INSERT INTO operation_outbox(
-            operation_key,task_id,operation_type,expected_head_sha,state
-         ) VALUES (?1,?2,?3,?4,'PENDING')",
+            operation_key,task_id,operation_type,target,expected_head_sha,state
+         ) VALUES (?1,?2,?3,?4,?5,'PENDING')",
         params![
             intent.operation_key,
             intent.task_id,
             intent.operation_type,
+            intent.target,
             intent.expected_head_sha
         ],
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(true)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PendingOperation {
+    pub operation_key: String,
+    pub task_id: Option<String>,
+    pub operation_type: String,
+    pub target: Option<String>,
+    pub expected_head_sha: Option<String>,
+    pub state: String,
+    pub remote_ref: Option<String>,
+}
+
+/// Pending side effects that must be reconciled against GitHub before any replay.
+pub fn pending_operations(connection: &Connection) -> Result<Vec<PendingOperation>, String> {
+    let mut statement = connection
+        .prepare(
+            "SELECT operation_key,task_id,operation_type,target,expected_head_sha,state,remote_ref
+             FROM operation_outbox WHERE state='PENDING' ORDER BY operation_key",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok(PendingOperation {
+                operation_key: row.get(0)?,
+                task_id: row.get(1)?,
+                operation_type: row.get(2)?,
+                target: row.get(3)?,
+                expected_head_sha: row.get(4)?,
+                state: row.get(5)?,
+                remote_ref: row.get(6)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
 }
 
 pub fn confirm_operation(
@@ -437,7 +506,161 @@ mod tests {
                 row.get(0)
             })
             .unwrap();
-        assert_eq!(versions, 3);
+        assert_eq!(versions, 5);
+    }
+
+    #[test]
+    fn canonical_schema_has_documented_entities_and_no_parallel_stores() {
+        let temp = tempfile::tempdir().unwrap();
+        let conn = open(&temp.path().join("state.db")).unwrap();
+        let mut statement = conn
+            .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+            .unwrap();
+        let names: Vec<String> = statement
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        for required in [
+            "schema_migrations",
+            "tasks",
+            "task_events",
+            "task_dependencies",
+            "task_prs",
+            "agent_sessions",
+            "worktrees",
+            "leases",
+            "ci_runs",
+            "ci_checks",
+            "event_inbox",
+            "operation_outbox",
+            "checkpoints",
+            "repair_attempts",
+            "merge_authorizations",
+            "sync_cursors",
+            "policies",
+        ] {
+            assert!(
+                names.iter().any(|name| name == required),
+                "missing {required}"
+            );
+        }
+        for legacy in ["operation_journal", "sync_state", "task_checkpoints"] {
+            assert!(
+                !names.iter().any(|name| name == legacy),
+                "parallel table {legacy} must not exist"
+            );
+        }
+    }
+
+    #[test]
+    fn legacy_parallel_schema_is_reconciled_on_open() {
+        // Simulate a database created while recovery used the parallel stores
+        // (0001 + the superseded 0002 + 0003 already recorded).
+        const SUPERSEDED_0002: &str = "
+            CREATE TABLE IF NOT EXISTS operation_journal (operation_key TEXT PRIMARY KEY);
+            CREATE TABLE IF NOT EXISTS sync_state (resource_key TEXT PRIMARY KEY);
+            CREATE TABLE IF NOT EXISTS task_checkpoints (task_id TEXT PRIMARY KEY);
+        ";
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("state.db");
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(include_str!("../migrations/0001_initial.sql"))
+                .unwrap();
+            conn.execute_batch(SUPERSEDED_0002).unwrap();
+            conn.execute_batch(include_str!("../migrations/0003_recovery_storage.sql"))
+                .unwrap();
+            for version in 1..=3 {
+                conn.execute(
+                    "INSERT INTO schema_migrations(version) VALUES (?1)",
+                    params![version],
+                )
+                .unwrap();
+            }
+        }
+
+        let mut conn = open(&path).unwrap();
+        let mut statement = conn
+            .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+            .unwrap();
+        let names: Vec<String> = statement
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        drop(statement);
+        for legacy in ["operation_journal", "sync_state", "task_checkpoints"] {
+            assert!(
+                !names.iter().any(|name| name == legacy),
+                "{legacy} survived"
+            );
+        }
+        assert!(names.iter().any(|name| name == "sync_cursors"));
+        assert!(names.iter().any(|name| name == "ci_checks"));
+
+        let versions: i64 = conn
+            .query_row("SELECT COUNT(*) FROM schema_migrations", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(versions, 5);
+
+        // The reconciled outbox accepts a full intent including its target.
+        assert!(enqueue_operation(
+            &mut conn,
+            &OperationIntent {
+                operation_key: "push:t1:abc".into(),
+                task_id: None,
+                operation_type: "PUSH".into(),
+                target: "refs/heads/bam/1-x".into(),
+                expected_head_sha: Some("abc".into()),
+            }
+        )
+        .unwrap());
+    }
+
+    #[test]
+    fn required_entity_constraints_are_enforced() {
+        let temp = tempfile::tempdir().unwrap();
+        let conn = open(&temp.path().join("state.db")).unwrap();
+        create_task(&conn, "t1", 1, "I_1", 1).unwrap();
+
+        // task_dependencies: duplicate edges are rejected, unknown tasks are rejected.
+        let edge = "INSERT INTO task_dependencies(task_id,depends_on_repo_id,depends_on_node_id)
+                    VALUES ('t1',1,'I_9')";
+        conn.execute(edge, []).unwrap();
+        assert!(conn.execute(edge, []).is_err());
+        assert!(conn
+            .execute(
+                "INSERT INTO task_dependencies(task_id,depends_on_repo_id,depends_on_node_id)
+                 VALUES ('ghost',1,'I_9')",
+                []
+            )
+            .is_err());
+
+        // task_prs: one active branch writer per task.
+        let pr = "INSERT INTO task_prs(task_id,pr_node_id,pr_number,branch)
+                  VALUES ('t1',?1,10,'bam/1-x')";
+        conn.execute(pr, ["PR_1"]).unwrap();
+        assert!(conn.execute(pr, ["PR_2"]).is_err());
+
+        // ci_checks: identity is (task, context, sha, source).
+        let check = "INSERT INTO ci_checks(check_id,task_id,context,source,sha,status)
+                     VALUES (?1,'t1','Cargo Test','check_run',?2,'completed')";
+        conn.execute(check, ["c1", "abc"]).unwrap();
+        assert!(conn.execute(check, ["c2", "abc"]).is_err());
+        conn.execute(check, ["c3", "def"]).unwrap();
+
+        // repair_attempts: attempt numbers are positive.
+        assert!(conn
+            .execute(
+                "INSERT INTO repair_attempts(attempt_id,task_id,fingerprint,attempt_number,outcome)
+                 VALUES ('a0','t1','fp',0,'failed')",
+                []
+            )
+            .is_err());
     }
 
     #[test]
@@ -471,6 +694,7 @@ mod tests {
             operation_key: "push:t1:abc".into(),
             task_id: Some("t1".into()),
             operation_type: "push".into(),
+            target: "refs/heads/bam/t1".into(),
             expected_head_sha: Some("abc".into()),
         };
         assert!(enqueue_operation(&mut conn, &intent).unwrap());
@@ -482,10 +706,21 @@ mod tests {
         };
         assert!(enqueue_operation(&mut conn, &conflicting).is_err());
 
+        let retargeted = OperationIntent {
+            target: "refs/heads/other".into(),
+            ..intent.clone()
+        };
+        assert!(enqueue_operation(&mut conn, &retargeted).is_err());
+
+        let pending = pending_operations(&conn).unwrap();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].target.as_deref(), Some("refs/heads/bam/t1"));
+
         assert!(
             confirm_operation(&conn, &intent.operation_key, Some("refs/heads/bam/t1")).unwrap()
         );
         assert!(!confirm_operation(&conn, &intent.operation_key, None).unwrap());
+        assert!(pending_operations(&conn).unwrap().is_empty());
     }
 
     #[test]
