@@ -15,9 +15,16 @@ pub fn open(path: &Path) -> Result<Connection, String> {
     let tx = connection.transaction().map_err(|e| e.to_string())?;
     tx.execute_batch(include_str!("../migrations/0001_initial.sql"))
         .map_err(|e| e.to_string())?;
+    tx.execute_batch(include_str!("../migrations/0002_recovery.sql"))
+        .map_err(|e| e.to_string())?;
     tx.execute(
         "INSERT OR IGNORE INTO schema_migrations(version) VALUES (?1)",
         params![1],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.execute(
+        "INSERT OR IGNORE INTO schema_migrations(version) VALUES (2)",
+        [],
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
@@ -47,7 +54,7 @@ mod tests {
                 row.get(0)
             })
             .unwrap();
-        assert_eq!(versions, 1);
+        assert_eq!(versions, 2);
     }
     #[test]
     fn unique_active_issue_is_enforced() {
