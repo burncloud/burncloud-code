@@ -77,7 +77,8 @@ impl Config {
     }
 
     pub fn from_path(path: &Path) -> Result<Self, String> {
-        let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+        let text =
+            fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
         Self::parse(&text)
     }
 
