@@ -56,9 +56,13 @@ impl TaskState {
                 | (VerifyMain, Done, MainVerificationPass)
                 | (Blocked, Ready, ExplicitResume)
                 | (Paused, Ready, ExplicitResume)
-        ) || (next == Paused && evidence == ExplicitPause && !matches!(self, Done | Cancelled))
-          || (next == Blocked && evidence == ExternalBlock && !matches!(self, Done | Cancelled))
-          || (next == Cancelled && evidence == ExplicitCancel && !matches!(self, Done | Cancelled));
+        ) || (next == Paused
+            && evidence == ExplicitPause
+            && !matches!(self, Done | Cancelled))
+            || (next == Blocked && evidence == ExternalBlock && !matches!(self, Done | Cancelled))
+            || (next == Cancelled
+                && evidence == ExplicitCancel
+                && !matches!(self, Done | Cancelled));
         valid.then_some(next).ok_or(TransitionError)
     }
 }
