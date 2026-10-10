@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::ExitCode,
+    process::{Command, ExitCode},
 };
 
 #[derive(Parser)]
@@ -22,7 +22,10 @@ struct Cli {
 enum Commands {
     Init,
     Doctor,
-    Status,
+    Status {
+        #[arg(long)]
+        json: bool,
+    },
     Pending,
     Issue {
         number: u64,
@@ -48,20 +51,42 @@ fn resolve_db(config_path: &Path, configured: &str) -> PathBuf {
     if path.is_absolute() {
         return path;
     }
-    // Resolve relative paths against working directory, not the config file.
     let _ = config_path;
     path
+}
+
+fn probe_executable(name: &str) -> Result<String, String> {
+    let output = Command::new(name)
+        .arg("--version")
+        .output()
+        .map_err(|_| format!("{name}: not found"))?;
+    if !output.status.success() {
+        return Err(format!("{name}: --version failed"));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let version = stdout
+        .lines()
+        .chain(stderr.lines())
+        .find(|line| !line.trim().is_empty())
+        .unwrap_or("version available")
+        .trim()
+        .to_owned();
+    Ok(version)
 }
 
 fn execute(cli: Cli) -> Result<(), String> {
     match cli.command {
         Commands::Init => {
             if cli.config.exists() {
-                return Err(format!(
-                    "configuration already exists: {}",
-                    cli.config.display()
-                ));
+                let config = Config::from_path(&cli.config)?;
+                let database = resolve_db(&cli.config, &config.storage.database_path);
+                storage::open(&database)?;
+                println!("BAM already initialized: {}", cli.config.display());
+                return Ok(());
             }
+
             let parsed = Config::parse(DEFAULT_CONFIG)?;
             if let Some(parent) = cli.config.parent() {
                 fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -79,24 +104,47 @@ fn execute(cli: Cli) -> Result<(), String> {
             println!("Local compilation: forbidden");
             println!("Local testing: forbidden");
             println!("Automatic merge: forbidden");
-            println!("GitHub access and Codex availability: NOT VERIFIED (F1/F2)");
             println!(
                 "Target: {}/{} project #{}",
                 config.github.owner, config.github.repository, config.github.project_number
             );
-            Ok(())
+
+            let mut missing = Vec::new();
+            for executable in ["git", "gh", "codex"] {
+                match probe_executable(executable) {
+                    Ok(version) => println!("{executable}: {version}"),
+                    Err(error) => {
+                        println!("{executable}: unavailable");
+                        missing.push(error);
+                    }
+                }
+            }
+
+            println!("Remote GitHub/Projects permissions: NOT VERIFIED (M01 pending)");
+            if missing.is_empty() {
+                Ok(())
+            } else {
+                Err(format!(
+                    "missing required executables: {}",
+                    missing.join(", ")
+                ))
+            }
         }
-        Commands::Status => {
+        Commands::Status { json } => {
             let config = Config::from_path(&cli.config)?;
             let database = resolve_db(&cli.config, &config.storage.database_path);
             if !database.exists() {
                 return Err("state database does not exist; run bam init".into());
             }
             let conn = storage::open(&database)?;
-            println!(
-                "tasks: {}\nphase: F0 foundation\nscheduler: NOT IMPLEMENTED",
-                storage::task_count(&conn)?
-            );
+            let tasks = storage::task_count(&conn)?;
+            if json {
+                println!(
+                    "{{\"tasks\":{tasks},\"phase\":\"F0 foundation\",\"scheduler\":\"NOT_IMPLEMENTED\"}}"
+                );
+            } else {
+                println!("tasks: {tasks}\nphase: F0 foundation\nscheduler: NOT IMPLEMENTED");
+            }
             Ok(())
         }
         Commands::Pending => {
