@@ -1,3 +1,4 @@
+pub mod acceptance;
 pub mod config;
 pub mod event_sync;
 pub mod evidence;
