@@ -81,7 +81,9 @@ pub fn acquire_lease(
     if resource.trim().is_empty() || owner.trim().is_empty() || ttl_seconds <= 0 {
         return Err("invalid lease argument".into());
     }
-    let expires_at = now.checked_add(ttl_seconds).ok_or("lease deadline overflow")?;
+    let expires_at = now
+        .checked_add(ttl_seconds)
+        .ok_or("lease deadline overflow")?;
     let tx = connection
         .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
         .map_err(|e| e.to_string())?;
@@ -96,7 +98,9 @@ pub fn acquire_lease(
     let epoch = match previous {
         None => 1,
         Some((_, _, deadline)) if deadline > now => return Ok(None),
-        Some((_, previous_epoch, _)) => previous_epoch.checked_add(1).ok_or("lease epoch overflow")?,
+        Some((_, previous_epoch, _)) => previous_epoch
+            .checked_add(1)
+            .ok_or("lease epoch overflow")?,
     };
     tx.execute(
         "INSERT INTO leases(resource_key,owner_id,fencing_epoch,expires_at,heartbeat_at)
@@ -104,7 +108,13 @@ pub fn acquire_lease(
          ON CONFLICT(resource_key) DO UPDATE SET owner_id=excluded.owner_id,
          fencing_epoch=excluded.fencing_epoch,expires_at=excluded.expires_at,
          heartbeat_at=excluded.heartbeat_at",
-        params![resource, owner, epoch, expires_at.to_string(), now.to_string()],
+        params![
+            resource,
+            owner,
+            epoch,
+            expires_at.to_string(),
+            now.to_string()
+        ],
     )
     .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
@@ -125,13 +135,22 @@ pub fn renew_lease(
     if ttl_seconds <= 0 || now >= lease.expires_at {
         return Ok(None);
     }
-    let expires_at = now.checked_add(ttl_seconds).ok_or("lease deadline overflow")?;
+    let expires_at = now
+        .checked_add(ttl_seconds)
+        .ok_or("lease deadline overflow")?;
     let updated = connection
         .execute(
             "UPDATE leases SET expires_at=?1,heartbeat_at=?2
              WHERE resource_key=?3 AND owner_id=?4 AND fencing_epoch=?5
              AND CAST(expires_at AS INTEGER)>?6",
-            params![expires_at.to_string(),now.to_string(),lease.resource_key,lease.owner_id,lease.epoch,now],
+            params![
+                expires_at.to_string(),
+                now.to_string(),
+                lease.resource_key,
+                lease.owner_id,
+                lease.epoch,
+                now
+            ],
         )
         .map_err(|e| e.to_string())?;
     Ok((updated == 1).then(|| Lease {
@@ -145,7 +164,7 @@ pub fn release_lease(connection: &Connection, lease: &Lease) -> Result<bool, Str
         .execute(
             "UPDATE leases SET expires_at='0'
              WHERE resource_key=?1 AND owner_id=?2 AND fencing_epoch=?3",
-            params![lease.resource_key,lease.owner_id,lease.epoch],
+            params![lease.resource_key, lease.owner_id, lease.epoch],
         )
         .map_err(|e| e.to_string())?;
     Ok(updated == 1)
@@ -182,23 +201,35 @@ pub fn transition_task(
     let tx = connection
         .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
         .map_err(|e| e.to_string())?;
-    let state: String = tx.query_row(
-        "SELECT state FROM tasks WHERE id=?1", [task_id], |r| r.get(0)
-    ).map_err(|e| e.to_string())?;
+    let state: String = tx
+        .query_row("SELECT state FROM tasks WHERE id=?1", [task_id], |r| {
+            r.get(0)
+        })
+        .map_err(|e| e.to_string())?;
     let from = TaskState::parse_name(&state).ok_or("unknown persisted task state")?;
-    from.transition(next, evidence).map_err(|_| "state transition rejected")?;
-    let inserted = tx.execute(
-        "INSERT OR IGNORE INTO task_events(id,task_id,from_state,to_state,event_type)
+    from.transition(next, evidence)
+        .map_err(|_| "state transition rejected")?;
+    let inserted = tx
+        .execute(
+            "INSERT OR IGNORE INTO task_events(id,task_id,from_state,to_state,event_type)
          VALUES (?1,?2,?3,?4,?5)",
-        params![event_id,task_id,state,next.as_name(),format!("{evidence:?}")],
-    ).map_err(|e| e.to_string())?;
+            params![
+                event_id,
+                task_id,
+                state,
+                next.as_name(),
+                format!("{evidence:?}")
+            ],
+        )
+        .map_err(|e| e.to_string())?;
     if inserted == 0 {
         return Err("duplicate transition event".into());
     }
     tx.execute(
         "UPDATE tasks SET state=?1,updated_at=CURRENT_TIMESTAMP WHERE id=?2",
-        params![next.as_name(),task_id],
-    ).map_err(|e| e.to_string())?;
+        params![next.as_name(), task_id],
+    )
+    .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())
 }
 
@@ -212,15 +243,23 @@ mod persistence_tests {
         let temp = tempfile::tempdir().unwrap();
         let mut first = open(&temp.path().join("state.db")).unwrap();
         let mut second = open(&temp.path().join("state.db")).unwrap();
-        let a = acquire_lease(&mut first, "branch:1", "agent-a", 100, 10).unwrap().unwrap();
+        let a = acquire_lease(&mut first, "branch:1", "agent-a", 100, 10)
+            .unwrap()
+            .unwrap();
         assert_eq!(a.epoch, 1);
-        assert!(acquire_lease(&mut second, "branch:1", "agent-b", 109, 10).unwrap().is_none());
-        let b = acquire_lease(&mut second, "branch:1", "agent-b", 110, 10).unwrap().unwrap();
+        assert!(acquire_lease(&mut second, "branch:1", "agent-b", 109, 10)
+            .unwrap()
+            .is_none());
+        let b = acquire_lease(&mut second, "branch:1", "agent-b", 110, 10)
+            .unwrap()
+            .unwrap();
         assert_eq!(b.epoch, 2);
         assert!(!release_lease(&first, &a).unwrap());
         assert!(renew_lease(&first, &a, 111, 10).unwrap().is_none());
         assert!(release_lease(&second, &b).unwrap());
-        let c = acquire_lease(&mut first, "branch:1", "agent-c", 112, 10).unwrap().unwrap();
+        let c = acquire_lease(&mut first, "branch:1", "agent-c", 112, 10)
+            .unwrap()
+            .unwrap();
         assert_eq!(c.epoch, 3);
     }
 
@@ -230,7 +269,9 @@ mod persistence_tests {
         let mut conn = open(&temp.path().join("state.db")).unwrap();
         assert!(acquire_lease(&mut conn, "", "owner", 1, 2).is_err());
         assert!(acquire_lease(&mut conn, "a", "owner", i64::MAX, 2).is_err());
-        let lease = acquire_lease(&mut conn, "a", "owner", 5, 10).unwrap().unwrap();
+        let lease = acquire_lease(&mut conn, "a", "owner", 5, 10)
+            .unwrap()
+            .unwrap();
         let renewed = renew_lease(&conn, &lease, 9, 20).unwrap().unwrap();
         assert_eq!(renewed.expires_at, 29);
         assert!(renew_lease(&conn, &lease, 16, 5).unwrap().is_some());
@@ -241,14 +282,29 @@ mod persistence_tests {
     fn guarded_transition_and_event_are_atomic() {
         let temp = tempfile::tempdir().unwrap();
         let mut conn = open(&temp.path().join("state.db")).unwrap();
-        create_task(&conn,"t1",1,"I_1",10).unwrap();
-        assert!(create_task(&conn,"t2",1,"I_1",10).is_err());
-        assert!(transition_task(&mut conn,"t1",TaskState::Merged,Evidence::None,"ev0").is_err());
-        transition_task(&mut conn,"t1",TaskState::Ready,Evidence::ReadyCriteria,"ev1").unwrap();
-        assert!(transition_task(&mut conn,"t1",TaskState::Running,Evidence::None,"ev2").is_err());
-        let current: String = conn.query_row("SELECT state FROM tasks WHERE id='t1'",[],|r|r.get(0)).unwrap();
-        assert_eq!(current,"READY");
-        let event_count: i64 = conn.query_row("SELECT COUNT(*) FROM task_events",[],|r|r.get(0)).unwrap();
-        assert_eq!(event_count,1);
+        create_task(&conn, "t1", 1, "I_1", 10).unwrap();
+        assert!(create_task(&conn, "t2", 1, "I_1", 10).is_err());
+        assert!(
+            transition_task(&mut conn, "t1", TaskState::Merged, Evidence::None, "ev0").is_err()
+        );
+        transition_task(
+            &mut conn,
+            "t1",
+            TaskState::Ready,
+            Evidence::ReadyCriteria,
+            "ev1",
+        )
+        .unwrap();
+        assert!(
+            transition_task(&mut conn, "t1", TaskState::Running, Evidence::None, "ev2").is_err()
+        );
+        let current: String = conn
+            .query_row("SELECT state FROM tasks WHERE id='t1'", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(current, "READY");
+        let event_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM task_events", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(event_count, 1);
     }
 }
