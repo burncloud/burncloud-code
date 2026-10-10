@@ -1,8 +1,6 @@
 use bam::{
     config::{Config, DEFAULT_CONFIG},
-    storage,
-    github,
-    recovery,
+    github, recovery, storage,
 };
 use clap::{Parser, Subcommand};
 use std::{
@@ -26,8 +24,12 @@ enum Commands {
     Doctor,
     Status,
     Pending,
-    Issue { number: u64 },
-    Pr { number: u64 },
+    Issue {
+        number: u64,
+    },
+    Pr {
+        number: u64,
+    },
     Issues,
     Prs,
     Config {
@@ -103,34 +105,43 @@ fn execute(cli: Cli) -> Result<(), String> {
             let conn = storage::open(&database)?;
             let pending = recovery::pending_operations(&conn)?;
             for op in &pending {
-                println!("{} {} {} [PENDING: remote reconciliation required]",op.key,op.kind,op.target);
+                println!(
+                    "{} {} {} [PENDING: remote reconciliation required]",
+                    op.key, op.kind, op.target
+                );
             }
-            println!("pending operations: {}",pending.len());
+            println!("pending operations: {}", pending.len());
             Ok(())
         }
-        Commands::Issue {number} => {
-            let c=Config::from_path(&cli.config)?;
-            let i=github::get_issue(&c.github.owner,&c.github.repository,number)?;
-            println!("#{} [{}] {} (node {})",i.number,i.state,i.title,i.node_id);
+        Commands::Issue { number } => {
+            let c = Config::from_path(&cli.config)?;
+            let i = github::get_issue(&c.github.owner, &c.github.repository, number)?;
+            println!(
+                "#{} [{}] {} (node {})",
+                i.number, i.state, i.title, i.node_id
+            );
             Ok(())
         }
-        Commands::Pr {number} => {
-            let c=Config::from_path(&cli.config)?;
-            let p=github::get_pr(&c.github.owner,&c.github.repository,number)?;
-            println!("PR #{} [{}] draft={} head={}",p.number,p.state,p.draft,p.head.sha);
+        Commands::Pr { number } => {
+            let c = Config::from_path(&cli.config)?;
+            let p = github::get_pr(&c.github.owner, &c.github.repository, number)?;
+            println!(
+                "PR #{} [{}] draft={} head={}",
+                p.number, p.state, p.draft, p.head.sha
+            );
             Ok(())
         }
         Commands::Issues => {
-            let c=Config::from_path(&cli.config)?;
-            for i in github::get_open_issues(&c.github.owner,&c.github.repository)? {
-                println!("#{} [{}] {}",i.number,i.state,i.title);
+            let c = Config::from_path(&cli.config)?;
+            for i in github::get_open_issues(&c.github.owner, &c.github.repository)? {
+                println!("#{} [{}] {}", i.number, i.state, i.title);
             }
             Ok(())
         }
         Commands::Prs => {
-            let c=Config::from_path(&cli.config)?;
-            for p in github::get_open_prs(&c.github.owner,&c.github.repository)? {
-                println!("#{} [{}] {}",p.number,p.state,p.head.sha);
+            let c = Config::from_path(&cli.config)?;
+            for p in github::get_open_prs(&c.github.owner, &c.github.repository)? {
+                println!("#{} [{}] {}", p.number, p.state, p.head.sha);
             }
             Ok(())
         }
