@@ -95,7 +95,8 @@ impl Config {
             return Err("poll interval must be positive, agents must be between 1 and 8".into());
         }
         if self.manager.max_repair_attempts_per_error == 0
-            || self.manager.max_total_attempts_per_task < self.manager.max_repair_attempts_per_error {
+            || self.manager.max_total_attempts_per_task < self.manager.max_repair_attempts_per_error
+        {
             return Err("repair budgets must be positive and internally consistent".into());
         }
         if self.storage.database_path.trim().is_empty() {
