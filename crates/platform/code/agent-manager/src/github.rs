@@ -3,7 +3,12 @@ use serde::Deserialize;
 use std::process::{Command, Stdio};
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct PullRequestMarker {}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct RemoteIssue {
+    #[serde(default)]
+    pub pull_request: Option<PullRequestMarker>,
     pub id: u64,
     pub node_id: String,
     pub number: u64,
@@ -116,15 +121,13 @@ pub fn get_open_issues(owner: &str, repo: &str) -> Result<Vec<RemoteIssue>, Stri
     let mut items = Vec::new();
     for page in 1..=100 {
         let raw = gh_get(&list_issues_endpoint(owner, repo, page)?)?;
-        let batch: Vec<serde_json::Value> =
+        let batch: Vec<RemoteIssue> =
             serde_json::from_str(&raw).map_err(|e| e.to_string())?;
         let count = batch.len();
         for entry in batch {
             // GitHub issues endpoint includes pull requests; never treat them as issues.
-            if entry.get("pull_request").is_none() {
-                items.push(
-                    serde_json::from_value(entry).map_err(|e| format!("issue payload: {e}"))?,
-                );
+            if entry.pull_request.is_none() {
+                items.push(entry);
             }
         }
         if count < 100 {
