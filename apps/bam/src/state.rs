@@ -99,7 +99,9 @@ mod tests {
     }
     #[test]
     fn cannot_claim_ci_success_without_evidence() {
-        assert!(TaskState::WaitCi.transition(TaskState::Review, Evidence::None).is_err());
+        assert!(TaskState::WaitCi
+            .transition(TaskState::Review, Evidence::None)
+            .is_err());
     }
     #[test]
     fn completed_tasks_are_terminal() {
