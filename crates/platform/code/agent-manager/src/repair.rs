@@ -488,7 +488,7 @@ error: could not compile `bam` (lib) due to 1 previous error
         RepairLoop::new(RepairBudget::new(per_error, total).unwrap(), 5, 60).unwrap()
     }
 
-    fn failure<'a>(task: &'a str, log: &'a str) -> CiFailure<'a> {
+    fn ci_failure<'a>(task: &'a str, log: &'a str) -> CiFailure<'a> {
         CiFailure {
             task_id: task,
             agent_session: Some("session-1"),
@@ -591,7 +591,7 @@ error: could not compile `bam` (lib) due to 1 previous error
     #[test]
     fn repeated_identical_errors_back_off_and_then_exhaust_the_budget() {
         let mut loop_ = loop_with(3, 12);
-        let failure = failure("task-1", RUSTC_LOG);
+        let failure = ci_failure("task-1", RUSTC_LOG);
 
         let first = loop_.plan(&failure, 100).unwrap();
         match &first {
@@ -654,7 +654,7 @@ error: could not compile `bam` (lib) due to 1 previous error
     #[test]
     fn a_fixed_error_frees_its_budget_and_a_new_error_gets_its_own() {
         let mut loop_ = loop_with(2, 4);
-        let failure = failure("task-2", RUSTC_LOG);
+        let failure = ci_failure("task-2", RUSTC_LOG);
         let key = fingerprint(RUSTC_LOG);
 
         // Attempt 1 consumes one unit of the total budget.
@@ -676,7 +676,7 @@ error: could not compile `bam` (lib) due to 1 previous error
         ));
 
         // A different error is tracked under its own fingerprint (M09-07).
-        let other = failure("task-2", "test x ... FAILED\nassertion failed");
+        let other = ci_failure("task-2", "test x ... FAILED\nassertion failed");
         assert!(matches!(
             loop_.plan(&other, 3).unwrap(),
             RepairDecision::Repair {
@@ -712,7 +712,7 @@ error: could not compile `bam` (lib) due to 1 previous error
     #[test]
     fn environment_failures_back_off_without_touching_code() {
         let mut loop_ = loop_with(3, 12);
-        let failure = failure("task-3", "No space left on device");
+        let failure = ci_failure("task-3", "No space left on device");
         let decision = loop_.plan(&failure, 10).unwrap();
         match decision {
             RepairDecision::EnvironmentBackoff {
@@ -755,7 +755,7 @@ error: could not compile `bam` (lib) due to 1 previous error
         storage::create_task(&connection, "task-4", 1, "I_4", 4).unwrap();
 
         let mut loop_ = loop_with(3, 12);
-        let failure = failure("task-4", RUSTC_LOG);
+        let failure = ci_failure("task-4", RUSTC_LOG);
         assert!(matches!(
             loop_.plan(&failure, 50).unwrap(),
             RepairDecision::Repair { .. }
@@ -778,6 +778,6 @@ error: could not compile `bam` (lib) due to 1 previous error
         assert_eq!(stored.1, 1);
 
         // A task-less failure cannot be planned.
-        assert!(loop_.plan(&failure("  ", RUSTC_LOG), 60).is_err());
+        assert!(loop_.plan(&ci_failure("  ", RUSTC_LOG), 60).is_err());
     }
 }
