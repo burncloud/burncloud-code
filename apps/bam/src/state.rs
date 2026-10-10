@@ -75,10 +75,14 @@ mod tests {
         use Evidence::*;
         use TaskState::*;
         let sequence = [
-            (Ready, ReadyCriteria), (Running, LeaseGranted),
-            (WaitCi, RemotePushConfirmed), (Review, CurrentHeadCiPass),
-            (ReadyForReview, AcceptancePass), (AwaitingMerge, ReviewPass),
-            (Merged, GitHubMergeConfirmed), (VerifyMain, GitHubMergeConfirmed),
+            (Ready, ReadyCriteria),
+            (Running, LeaseGranted),
+            (WaitCi, RemotePushConfirmed),
+            (Review, CurrentHeadCiPass),
+            (ReadyForReview, AcceptancePass),
+            (AwaitingMerge, ReviewPass),
+            (Merged, GitHubMergeConfirmed),
+            (VerifyMain, GitHubMergeConfirmed),
             (Done, MainVerificationPass),
         ];
         let mut state = Backlog;
