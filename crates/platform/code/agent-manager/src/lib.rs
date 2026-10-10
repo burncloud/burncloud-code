@@ -1,3 +1,4 @@
+pub mod command_policy;
 pub mod config;
 pub mod github;
 pub mod recovery;
