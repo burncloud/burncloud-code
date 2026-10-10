@@ -482,7 +482,9 @@ mod tests {
         };
         assert!(enqueue_operation(&mut conn, &conflicting).is_err());
 
-        assert!(confirm_operation(&conn, &intent.operation_key, Some("refs/heads/bam/t1")).unwrap());
+        assert!(
+            confirm_operation(&conn, &intent.operation_key, Some("refs/heads/bam/t1")).unwrap()
+        );
         assert!(!confirm_operation(&conn, &intent.operation_key, None).unwrap());
     }
 
