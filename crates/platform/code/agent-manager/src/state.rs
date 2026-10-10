@@ -110,3 +110,71 @@ mod tests {
             .is_err());
     }
 }
+
+impl TaskState {
+    pub const fn as_name(self) -> &'static str {
+        match self {
+            Self::Backlog => "BACKLOG",
+            Self::Ready => "READY",
+            Self::Running => "RUNNING",
+            Self::WaitCi => "WAIT_CI",
+            Self::FixCi => "FIX_CI",
+            Self::Review => "REVIEW",
+            Self::ReadyForReview => "READY_FOR_REVIEW",
+            Self::AwaitingMerge => "AWAITING_MERGE",
+            Self::Merged => "MERGED",
+            Self::VerifyMain => "VERIFY_MAIN",
+            Self::Done => "DONE",
+            Self::Blocked => "BLOCKED",
+            Self::Paused => "PAUSED",
+            Self::Cancelled => "CANCELLED",
+        }
+    }
+
+    pub fn parse_name(name: &str) -> Option<Self> {
+        match name {
+            "BACKLOG" => Some(Self::Backlog),
+            "READY" => Some(Self::Ready),
+            "RUNNING" => Some(Self::Running),
+            "WAIT_CI" => Some(Self::WaitCi),
+            "FIX_CI" => Some(Self::FixCi),
+            "REVIEW" => Some(Self::Review),
+            "READY_FOR_REVIEW" => Some(Self::ReadyForReview),
+            "AWAITING_MERGE" => Some(Self::AwaitingMerge),
+            "MERGED" => Some(Self::Merged),
+            "VERIFY_MAIN" => Some(Self::VerifyMain),
+            "DONE" => Some(Self::Done),
+            "BLOCKED" => Some(Self::Blocked),
+            "PAUSED" => Some(Self::Paused),
+            "CANCELLED" => Some(Self::Cancelled),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod persisted_state_tests {
+    use super::*;
+    #[test]
+    fn all_state_names_round_trip() {
+        for state in [
+            TaskState::Backlog,
+            TaskState::Ready,
+            TaskState::Running,
+            TaskState::WaitCi,
+            TaskState::FixCi,
+            TaskState::Review,
+            TaskState::ReadyForReview,
+            TaskState::AwaitingMerge,
+            TaskState::Merged,
+            TaskState::VerifyMain,
+            TaskState::Done,
+            TaskState::Blocked,
+            TaskState::Paused,
+            TaskState::Cancelled,
+        ] {
+            assert_eq!(TaskState::parse_name(state.as_name()), Some(state));
+        }
+        assert_eq!(TaskState::parse_name("unknown"), None);
+    }
+}
