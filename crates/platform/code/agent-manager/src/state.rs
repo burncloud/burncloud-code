@@ -158,11 +158,20 @@ mod persisted_state_tests {
     #[test]
     fn all_state_names_round_trip() {
         for state in [
-            TaskState::Backlog, TaskState::Ready, TaskState::Running,
-            TaskState::WaitCi, TaskState::FixCi, TaskState::Review,
-            TaskState::ReadyForReview, TaskState::AwaitingMerge,
-            TaskState::Merged, TaskState::VerifyMain, TaskState::Done,
-            TaskState::Blocked, TaskState::Paused, TaskState::Cancelled,
+            TaskState::Backlog,
+            TaskState::Ready,
+            TaskState::Running,
+            TaskState::WaitCi,
+            TaskState::FixCi,
+            TaskState::Review,
+            TaskState::ReadyForReview,
+            TaskState::AwaitingMerge,
+            TaskState::Merged,
+            TaskState::VerifyMain,
+            TaskState::Done,
+            TaskState::Blocked,
+            TaskState::Paused,
+            TaskState::Cancelled,
         ] {
             assert_eq!(TaskState::parse_name(state.as_name()), Some(state));
         }
