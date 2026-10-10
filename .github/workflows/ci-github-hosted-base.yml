@@ -1,0 +1,134 @@
+name: Reusable / GitHub-hosted Rust Check
+
+on:
+  workflow_call:
+    inputs:
+      check:
+        description: One of fmt, test, clippy, deny.
+        required: true
+        type: string
+      check_name:
+        description: Human-readable GitHub check name.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-hosted-${{ inputs.check }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ inputs.check_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+
+    steps:
+      - name: Validate requested check
+        env:
+          REQUESTED_CHECK: ${{ inputs.check }}
+        run: |
+          case "$REQUESTED_CHECK" in
+            fmt|test|clippy|deny) ;;
+            *) echo "::error::Unsupported Rust check: $REQUESTED_CHECK"; exit 2 ;;
+          esac
+
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect Rust target
+        id: rust_target
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f src/main.rs || -f src/lib.rs ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No src/main.rs or src/lib.rs exists yet; Rust check is skipped."
+          fi
+
+      - name: Detect dependency-policy changes
+        id: deny_scope
+        if: inputs.check == 'deny' && steps.rust_target.outputs.run == 'true'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="origin/$BASE_REF"
+          merge_base="$(git merge-base "$base" HEAD)"
+          run_deny=false
+          while IFS= read -r path; do
+            [[ -z "$path" ]] && continue
+            case "$path" in
+              Cargo.toml|Cargo.lock|deny.toml|.cargo/*)
+                echo "Dependency-policy change: $path"
+                run_deny=true
+                ;;
+            esac
+          done < <(git diff --name-only "$merge_base" HEAD --)
+          echo "run=$run_deny" >> "$GITHUB_OUTPUT"
+          if [[ "$run_deny" == "false" ]]; then
+            echo "No dependency-policy changes; skipping Cargo Deny."
+          fi
+
+      - name: Cache Cargo downloads and build outputs
+        if: steps.rust_target.outputs.run == 'true' && (inputs.check != 'deny' || steps.deny_scope.outputs.run == 'true')
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: github-hosted-${{ inputs.check }}
+          cache-on-failure: false
+
+      - name: Ensure Rust components
+        if: steps.rust_target.outputs.run == 'true' && (inputs.check != 'deny' || steps.deny_scope.outputs.run == 'true')
+        run: |
+          set -euo pipefail
+          rustup component add rustfmt clippy
+          cargo --version
+          rustc --version
+
+      - name: Prepare OpenSSL dependencies
+        if: steps.rust_target.outputs.run == 'true' && (inputs.check == 'test' || inputs.check == 'clippy')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+
+      - name: Cargo Fmt
+        if: inputs.check == 'fmt' && steps.rust_target.outputs.run == 'true'
+        run: cargo fmt --all -- --check
+
+      - name: Cargo Test
+        if: inputs.check == 'test' && steps.rust_target.outputs.run == 'true'
+        run: cargo test --all-targets --all-features
+
+      - name: Cargo Clippy
+        if: inputs.check == 'clippy' && steps.rust_target.outputs.run == 'true'
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Ensure cargo-deny
+        if: inputs.check == 'deny' && steps.rust_target.outputs.run == 'true' && steps.deny_scope.outputs.run == 'true'
+        run: |
+          cargo deny --version >/dev/null 2>&1 || cargo install --locked cargo-deny
+
+      - name: Cargo Deny
+        if: inputs.check == 'deny' && steps.rust_target.outputs.run == 'true' && steps.deny_scope.outputs.run == 'true'
+        run: |
+          set +e
+          timeout --kill-after=30s 5m cargo deny --log-level info check
+          status=$?
+          set -e
+          if [[ "$status" -eq 124 || "$status" -eq 137 ]]; then
+            echo "::error::Cargo Deny exceeded the 5 minute limit."
+          fi
+          exit "$status"
