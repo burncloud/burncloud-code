@@ -1,12 +1,15 @@
 # BurnCloud Agent Manager — 细粒度模块设计与实施需求
 
+> **全局 P0 强制策略：** [本地零编译、零测试；测试源码提交 GitHub 后仅由 Actions CI 执行](./bam-local-execution-policy.md)。本策略覆盖所有“默认禁止”或“只禁止全量”的旧措辞，不允许 Agent/配置豁免。
+
 **版本：v1.1（细化补充稿）**  
-**上位文档：** [BAM PRD v1.0](./bam-prd.md)  
+**上位文档：** [BAM PRD v1.0](./bam-prd.md)
+**代码级设计：** [BAM v1.2 — Rust 架构、SQLite Schema、GitHub API 与恢复协议](./bam-implementation-v1.2.md)  
 **状态：** 需求与实现设计，非现有功能声明。
 
 ## 0. 约束与验收原则
 
-本文件细化原 PRD 的 M01–M16。原有 P0/P1 优先级、AC-01…AC-10、23 项交付物继续有效，**不得因本文件缺漏而删减原要求**。GitHub Issue、PR、Projects 和 Actions 是远端事实来源；SQLite 负责本地持久执行状态。默认不在本地运行全量 Rust 编译与测试；没有单独 Web 看板；不操作 chatgpt.com Web 界面。
+本文件细化原 PRD 的 M01–M16。原有 P0/P1 优先级、AC-01…AC-10、23 项交付物继续有效，**不得因本文件缺漏而删减原要求**。GitHub Issue、PR、Projects 和 Actions 是远端事实来源；SQLite 负责本地持久执行状态。强制禁止在本地运行任何编译与测试；没有单独 Web 看板；不操作 chatgpt.com Web 界面。
 
 **绝对禁止：** 未获用户明确授权自动 Merge；使用不属于最新 HEAD 的 CI 证据；未经验证把 SKIPPED/MISSING 的 Required Check 认作 PASS；两个 Agent 同时写同一个任务分支；覆盖用户未提交数据；把 Agent 的自然语言判断当作最终验收证据。
 
@@ -97,7 +100,7 @@
 
 | 子模块 | 开发要求 | 故障与安全分支 | 可验证验收 |
 |---|---|---|---|
-| M07-A 重命令门禁 | 默认禁止全量 cargo test、clippy、release build；识别参数与包装 | 不得通过 shell 包装绕过 | 模拟命令矩阵 |
+| M07-A 零编译零测试门禁 | 任何本地编译、cargo check/build/test/clippy/run 与任意单元/集成/E2E 测试均强制禁止 | shell/IDE/hook/Wrapper 均不得绕过；违反即阻断 | CI 中运行完整模拟拦截矩阵 |
 | M07-B 轻量检查 | 允许 git diff/status、diff --check 等 | 本地不执行远端完整质量门禁 | 确保只产生轻量进程 |
 | M07-C Hook 发现 | 检测 core.hooksPath、pre-commit、commit-msg 内容/副作用 | 不能默默全局禁用开发者 hook | Windows/Linux hook 测试 |
 | M07-D 独立提交路径 | Agent 局部 hook 策略需审计理由，远端检查必须补齐 | 不允许 CI 因 skip 静默变绿 | 日志保留跳过原因 |
@@ -271,7 +274,7 @@
 | T-04 | M04/M13 | 双调度器同时领取 | 只有一个有效 lease |
 | T-05 | M05 | Agent 声称完成但没有 diff | 不得 PASS |
 | T-06 | M06 | 非快进 push/dirty worktree | 不强推、不丢代码 |
-| T-07 | M07 | 请求本地全量 cargo test | 默认拒绝 |
+| T-07 | M07 | 请求任何本地编译或测试（含脚本间接调用） | 强制拒绝；所有测试由 GitHub Actions 执行 |
 | T-08 | M08 | 新 HEAD 沿用旧 CI PASS | 旧证据失效 |
 | T-09 | M08 | 必须 PostgreSQL 测试被跳过 | 验收失败 |
 | T-10 | M09 | 同一错误连续超过 3 轮 | 停止自动修复 |
