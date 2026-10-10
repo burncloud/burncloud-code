@@ -1,9 +1,5 @@
-mod config;
-mod state;
-mod storage;
-
 use clap::{Parser, Subcommand};
-use config::{Config, DEFAULT_CONFIG};
+use bam::{config::{Config, DEFAULT_CONFIG}, storage};
 use std::{fs, path::{Path, PathBuf}, process::ExitCode};
 
 #[derive(Parser)]
