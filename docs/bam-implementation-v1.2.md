@@ -1,5 +1,7 @@
 # BAM v1.2 — 代码级架构、数据契约与实施蓝图
 
+> **全局 P0 强制策略：** [本地零编译、零测试；测试源码提交 GitHub 后仅由 Actions CI 执行](./bam-local-execution-policy.md)。本策略覆盖所有“默认禁止”或“只禁止全量”的旧措辞，不允许 Agent/配置豁免。
+
 **状态：设计补充，尚未实现**  
 **适用：** [PRD v1.0](./bam-prd.md) 与 [模块细化 v1.1](./bam-module-design-v1.1.md)  
 **目标：** 将 M01–M16 的实现细化到可分工的 Rust 模块、Schema、API、测试工件和不可绕过的安全门禁。
