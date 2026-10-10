@@ -1,0 +1,24 @@
+name: BAM / Required Rust Validation
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bam:
+    name: BAM / Actual Fmt Clippy Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Rust components
+        run: rustup component add rustfmt clippy
+      - name: Check BAM formatting
+        run: cargo fmt --manifest-path crates/platform/code/agent-manager/Cargo.toml --all -- --check
+      - name: Check BAM Clippy
+        run: cargo clippy --manifest-path crates/platform/code/agent-manager/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Run BAM unit and integration tests
+        run: cargo test --manifest-path crates/platform/code/agent-manager/Cargo.toml --all-targets --all-features
