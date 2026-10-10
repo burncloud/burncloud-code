@@ -1,0 +1,18 @@
+# Repository-wide Clippy configuration, adapted from burncloud/burncloud.
+# Agents must not bypass correctness checks with broad lint suppression.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-print-in-tests = true
+
+too-many-arguments-threshold = 6
+too-many-lines-threshold = 120
+cognitive-complexity-threshold = 20
+type-complexity-threshold = 200
+future-size-threshold = 16384
+array-size-threshold = 16384
+
+# Dynamic JSON is reserved for explicit protocol or adapter boundaries.
+disallowed-types = [
+    { path = "serde_json::Value", reason = "Use typed contracts in business logic; allow dynamic JSON only at explicit protocol/adaptor boundaries" },
+]
