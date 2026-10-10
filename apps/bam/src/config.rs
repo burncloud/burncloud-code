@@ -83,10 +83,15 @@ impl Config {
     }
 
     pub fn validate(&self) -> Result<(), String> {
-        if self.github.owner.trim().is_empty() || self.github.repository.trim().is_empty() || self.github.project_number == 0 {
+        if self.github.owner.trim().is_empty()
+            || self.github.repository.trim().is_empty()
+            || self.github.project_number == 0
+        {
             return Err("GitHub owner/repository/project_number must be set".into());
         }
-        if self.manager.poll_interval_seconds == 0 || !(1..=8).contains(&self.manager.max_concurrent_agents) {
+        if self.manager.poll_interval_seconds == 0
+            || !(1..=8).contains(&self.manager.max_concurrent_agents)
+        {
             return Err("poll interval must be positive, agents must be between 1 and 8".into());
         }
         if self.manager.max_repair_attempts_per_error == 0
