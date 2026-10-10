@@ -1,6 +1,11 @@
 //! GitHub read-only adapter using `gh api`. No token is included in command args.
 use serde::Deserialize;
-use std::process::{Command, Stdio};
+use std::{
+    collections::hash_map::DefaultHasher,
+    env, fmt,
+    hash::{Hash, Hasher},
+    process::{Command, Stdio},
+};
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct PullRequestMarker {}
@@ -148,8 +153,238 @@ pub fn get_open_prs(owner: &str, repo: &str) -> Result<Vec<RemotePr>, String> {
     }
     Err("pagination limit reached; refusing incomplete PR results".into())
 }
+
+const ENV_TOKEN_KEYS: [&str; 3] = ["BAM_GITHUB_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"];
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum CredentialSource {
+    Environment(&'static str),
+    GhCli,
+}
+
+impl fmt::Debug for CredentialSource {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Environment(name) => formatter.debug_tuple("Environment").field(name).finish(),
+            Self::GhCli => formatter.write_str("GhCli"),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Credential {
+    secret: String,
+    source: CredentialSource,
+    generation: u64,
+}
+
+impl Credential {
+    fn new(secret: String, source: CredentialSource) -> Result<Self, CredentialError> {
+        let secret = secret.trim().to_owned();
+        if secret.is_empty() {
+            return Err(CredentialError::Missing);
+        }
+        let mut hasher = DefaultHasher::new();
+        secret.hash(&mut hasher);
+        Ok(Self {
+            secret,
+            source,
+            generation: hasher.finish(),
+        })
+    }
+
+    pub fn source(&self) -> &CredentialSource {
+        &self.source
+    }
+
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
+
+    pub(crate) fn authorization_token(&self) -> &str {
+        &self.secret
+    }
+}
+
+impl fmt::Debug for Credential {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("Credential")
+            .field("source", &self.source)
+            .field("secret", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CredentialError {
+    Missing,
+    GhUnavailable,
+    GhRejected,
+}
+
+impl fmt::Display for CredentialError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Missing => formatter.write_str("GitHub credential is not configured"),
+            Self::GhUnavailable => formatter.write_str("GitHub CLI is unavailable"),
+            Self::GhRejected => {
+                formatter.write_str("GitHub CLI did not return a usable credential")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CredentialError {}
+
+pub trait Environment {
+    fn read(&self, key: &str) -> Option<String>;
+}
+
+pub trait GhCredentialSource {
+    fn token(&self) -> Result<String, CredentialError>;
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct SystemEnvironment;
+
+impl Environment for SystemEnvironment {
+    fn read(&self, key: &str) -> Option<String> {
+        env::var(key).ok()
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct SystemGh;
+
+impl GhCredentialSource for SystemGh {
+    fn token(&self) -> Result<String, CredentialError> {
+        let output = Command::new("gh")
+            .args(["auth", "token"])
+            .output()
+            .map_err(|_| CredentialError::GhUnavailable)?;
+        if !output.status.success() {
+            return Err(CredentialError::GhRejected);
+        }
+        let value = String::from_utf8(output.stdout).map_err(|_| CredentialError::GhRejected)?;
+        let token = value.trim();
+        if token.is_empty() {
+            return Err(CredentialError::GhRejected);
+        }
+        Ok(token.to_owned())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CredentialProvider<E = SystemEnvironment, G = SystemGh> {
+    environment: E,
+    gh: G,
+}
+
+impl Default for CredentialProvider<SystemEnvironment, SystemGh> {
+    fn default() -> Self {
+        Self {
+            environment: SystemEnvironment,
+            gh: SystemGh,
+        }
+    }
+}
+
+impl<E, G> CredentialProvider<E, G>
+where
+    E: Environment,
+    G: GhCredentialSource,
+{
+    pub fn new(environment: E, gh: G) -> Self {
+        Self { environment, gh }
+    }
+
+    pub fn resolve(&self) -> Result<Credential, CredentialError> {
+        for key in ENV_TOKEN_KEYS {
+            if let Some(value) = self.environment.read(key) {
+                if !value.trim().is_empty() {
+                    return Credential::new(value, CredentialSource::Environment(key));
+                }
+            }
+        }
+
+        let token = self.gh.token()?;
+        Credential::new(token, CredentialSource::GhCli)
+    }
+}
+
+pub fn redact_message(message: &str, credentials: &[&Credential]) -> String {
+    credentials
+        .iter()
+        .fold(message.to_owned(), |redacted, credential| {
+            redacted.replace(credential.authorization_token(), "***REDACTED***")
+        })
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct WriteGuard {
+    frozen_generation: Option<u64>,
+}
+
+impl WriteGuard {
+    pub fn can_write(&self, credential: &Credential) -> bool {
+        self.frozen_generation != Some(credential.generation())
+    }
+
+    pub fn observe_http_status(&mut self, status: u16, credential: &Credential) {
+        if status == 401 {
+            self.frozen_generation = Some(credential.generation());
+        }
+    }
+
+    pub fn require_write(&self, credential: &Credential) -> Result<(), WriteGuardError> {
+        if self.can_write(credential) {
+            Ok(())
+        } else {
+            Err(WriteGuardError::CredentialFrozen)
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WriteGuardError {
+    CredentialFrozen,
+}
+
+impl fmt::Display for WriteGuardError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("GitHub writes are frozen for the active credential generation")
+    }
+}
+
+impl std::error::Error for WriteGuardError {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CredentialDomain {
+    Worker,
+    MergeController,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GitHubCapability {
+    RepositoryRead,
+    RepositoryWrite,
+    ProjectsRead,
+    ProjectsWrite,
+    ActionsRead,
+    ChecksRead,
+    Merge,
+}
+
+pub fn capability_allowed(domain: CredentialDomain, capability: GitHubCapability) -> bool {
+    match domain {
+        CredentialDomain::Worker => capability != GitHubCapability::Merge,
+        CredentialDomain::MergeController => true,
+    }
+}
+
 #[cfg(test)]
-mod tests {
+mod read_only_tests {
     use super::*;
     #[test]
     fn endpoints_are_strictly_validated() {
@@ -174,3 +409,114 @@ mod tests {
         assert!(pr.draft);
     }
 }
+
+
+#[cfg(test)]
+mod credential_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[derive(Default)]
+    struct FakeEnvironment {
+        values: HashMap<&'static str, String>,
+    }
+
+    impl Environment for FakeEnvironment {
+        fn read(&self, key: &str) -> Option<String> {
+            self.values.get(key).cloned()
+        }
+    }
+
+    struct FakeGh(Result<String, CredentialError>);
+
+    impl GhCredentialSource for FakeGh {
+        fn token(&self) -> Result<String, CredentialError> {
+            self.0.clone()
+        }
+    }
+
+    #[test]
+    fn environment_precedes_gh_and_debug_redacts() {
+        let mut environment = FakeEnvironment::default();
+        environment
+            .values
+            .insert("BAM_GITHUB_TOKEN", "super-secret".into());
+        let provider =
+            CredentialProvider::new(environment, FakeGh(Err(CredentialError::GhRejected)));
+        let credential = provider.resolve().unwrap();
+        assert_eq!(
+            credential.source(),
+            &CredentialSource::Environment("BAM_GITHUB_TOKEN")
+        );
+        let debug = format!("{credential:?}");
+        assert!(!debug.contains("super-secret"));
+        assert!(debug.contains("redacted"));
+    }
+
+    #[test]
+    fn empty_environment_falls_back_to_gh() {
+        let mut environment = FakeEnvironment::default();
+        environment.values.insert("GH_TOKEN", "   ".into());
+        let provider = CredentialProvider::new(environment, FakeGh(Ok("gh-secret\n".into())));
+        let credential = provider.resolve().unwrap();
+        assert_eq!(credential.source(), &CredentialSource::GhCli);
+        assert_eq!(credential.authorization_token(), "gh-secret");
+    }
+
+    #[test]
+    fn missing_credentials_fail_closed() {
+        let provider = CredentialProvider::new(
+            FakeEnvironment::default(),
+            FakeGh(Err(CredentialError::Missing)),
+        );
+        assert_eq!(provider.resolve().unwrap_err(), CredentialError::Missing);
+    }
+
+    #[test]
+    fn redaction_removes_secret_material() {
+        let credential = Credential::new("token-value".into(), CredentialSource::GhCli).unwrap();
+        let message = redact_message(
+            "request Authorization: bearer token-value failed",
+            &[&credential],
+        );
+        assert_eq!(
+            message,
+            "request Authorization: bearer ***REDACTED*** failed"
+        );
+    }
+
+    #[test]
+    fn unauthorized_response_freezes_only_that_generation() {
+        let first = Credential::new("first-token".into(), CredentialSource::GhCli).unwrap();
+        let second = Credential::new("second-token".into(), CredentialSource::GhCli).unwrap();
+        let mut guard = WriteGuard::default();
+
+        assert!(guard.require_write(&first).is_ok());
+        guard.observe_http_status(403, &first);
+        assert!(guard.require_write(&first).is_ok());
+
+        guard.observe_http_status(401, &first);
+        assert_eq!(
+            guard.require_write(&first),
+            Err(WriteGuardError::CredentialFrozen)
+        );
+        assert!(guard.require_write(&second).is_ok());
+    }
+
+    #[test]
+    fn worker_domain_never_has_merge_capability() {
+        assert!(!capability_allowed(
+            CredentialDomain::Worker,
+            GitHubCapability::Merge
+        ));
+        assert!(capability_allowed(
+            CredentialDomain::Worker,
+            GitHubCapability::RepositoryWrite
+        ));
+        assert!(capability_allowed(
+            CredentialDomain::MergeController,
+            GitHubCapability::Merge
+        ));
+    }
+}
+
