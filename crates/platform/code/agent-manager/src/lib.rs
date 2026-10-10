@@ -4,6 +4,7 @@ pub mod event_sync;
 pub mod evidence;
 pub mod git;
 pub mod github;
+pub mod merge_guard;
 pub mod recovery;
 pub mod state;
 pub mod storage;
