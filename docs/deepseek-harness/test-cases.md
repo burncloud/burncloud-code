@@ -75,3 +75,46 @@
 - 验证级别（文档审查、历史核验、真实Harness执行、真实远端CI）与结果（未执行、通过、失败、阻塞、证据不足）。
 
 不得本地执行编译/测试，也不得为了验证禁令启动违规命令。Harness演练只观察已有授权对象，必要代码测试在GitHub Actions执行。不制造真实仓库测试数据、不发布本页虚构示例。没有证据保持“未执行”或“证据不足”。
+
+## 本轮观察核验快照（2026-10-11 16:21–16:3x +08:00 / 08:21–08:3xZ）
+
+本轮由人工在当前会话启动 08，非原生定时投递：`$env:DSH_SESSION_ID=session-94de2d69-3ed2-458c-aaf1-b0199113944d`，全局调度存储中不存在该会话的任何任务，`schedule_list` 返回 `[]`。因此下表 ST-* 状态一律不改写，仍为“未执行”；本轮仅登记可独立重查的核验事实。
+
+### 1. 原生任务注册（观测时刻 2026-10-11T16:24:38+08:00，存储 mtime `16:24:38.399+08:00`）
+
+全局存储为 `~/.dsh/storages/schedule.json`；本会话 `schedule_list` 返回 `[]`，注册清单以该存储为准。
+
+| 任务 id | 标题 | 周期 | 绑定会话 | 投递记录 |
+|---|---|---|---|---|
+| `schedule-697151b6-5dd6-4a39-9fd8-e0c250e49248` | # 01 BurnCloud Autonomous R&D Manager | 1800s | `session-9fc41f4c-5918-471a-951b-d48b718ab7c4` | 08:14:50Z 已投递（下一 08:44:50Z） |
+| `schedule-91abd46a-fb17-4d5e-9b91-7d3aae7a1d70` | # 02 BurnCloud 任务规划 Agent | **900s** | `session-6c79d782-05d3-4dfc-ab75-53ee2c620c23` | 无 |
+| `schedule-efc30c9c-b107-4378-8333-4b9b8a4c6614` | # 03 BurnCloud 代码开发 Agent | 600s | `session-68e0b4e0-95ba-420e-b334-a0188c8ae13b` | 08:22:27Z 已投递（下一 08:32:27Z） |
+| `schedule-4b776539-3ca7-47a7-a808-648893d14c6d` | # 04 BurnCloud PR 审查 Agent | 900s | `session-dc3d727b-4805-4bd2-b7ff-f1b6ae139c12` | 无 |
+| `schedule-a24f2011-9c4e-4342-8eb1-66cf1d34f7b1` | # 05 BurnCloud CI 守护 Agent | 600s | `session-a8d2fb18-3bcf-4787-99ed-30d73dd847ce` | 无 |
+| `schedule-11cb5842-bce7-452f-9307-0b63e5fb416d` | # 06 BurnCloud PR 合并控制 Agent | 600s | `session-562ee6e2-9d06-4cee-8e09-b0060af86d6e` | 无 |
+
+与文档模型的差异（详见 `issue-log.md` 的 BUG-DH-001）：07/08/09 未注册；02 实际 900s ≠ 文档 1800s；任务标题与文档任务名称不一致（如 01 注册名与文档“BurnCloud Issue 自动巡检 Agent”不同）；本集合未配置管理 Issue，按 `installation.md` 属“全局交接未配置”。ST-01、ST-04 的“真实触发/原生互斥”在本轮仍不可验证，保持“未执行”。
+
+### 2. `burncloud/burncloud#634` → PR #870 当前事实（API 实测）
+
+- PR 作者 API 核验 `rustburn`/`134291161`；HEAD `30c4cfb89c7da4cf23e0acbb9258fc652b445bff`（自 2026-10-10T21:57Z 未变，本轮 08:2xZ 复核）；base 记录 `b2f31d65…`，当前 main `0029e6c00ca1cbffdd894dc0174054a6026447a2`；`mergeable=false`、`mergeable_state=dirty`、`rebaseable=false`；1 commit（唯一作者 rustburn/134291161）；`changed_files=1`、`additions=420`、`deletions=0`；正式 Review 0 条（`reviews` 返回空）。
+- 该 HEAD 四项适用检查均为 `completed/success`、`run_attempt=1`：`check / Cargo Fmt` run 38089601870、`check / Cargo Deny` run 38089601938、`check / Cargo Clippy` run 38089601874、`check / Code Test` run 38089601893（job 114323144675）。
+- 补充事实（不改变结论）：main HEAD `0029e6c0` 上只有 `Maintenance / Sync to Gitee`（run 38109581100，event=push，success），四项 `check / *` 不在 main 的 push 触发范围内，属仓库既有触发配置，本文件不作变更建议。
+
+### 3. 协议链核验（分页读取全部开放授权对象的普通留言）
+
+- 开放对象：issue #633/#634/#635/#637/#652/#734（原始创建者均为 rustburn/134291161，state=open）与 PR #870；另 #801（`Heald-XYJ`/279250250）为非授权作者，只读忽略，未留言。
+- 协议留言共 14 条，全部 author=rustburn、`created_at==updated_at`，无重复 `message_id`、无断链：01 在 #633/#634/#635/#637/#652/#734 各 1 条 `ISSUE_CLASSIFIED`；02 在 #633/#635 各 1 条 `PLAN_READY`，在 #634/#637/#652 各 1 条 `TASK_BLOCKED`；04 在 PR #870 发 `REVIEW_RESULT`（[6106896060](https://github.com/burncloud/burncloud/pull/870#issuecomment-6106896060)）；05 在 PR #870 发 `CI_RESULT`（[6107056836](https://github.com/burncloud/burncloud/pull/870#issuecomment-6107056836)，`reply_to_comment_id=6106896060`）；03 在 #633 发 `DEVELOPMENT_STARTED`（[6107118156](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107118156)，`reply_to_comment_id` 指向 02 的计划 6106886782）。
+- 新事实：03 的该条留言写于 2026-10-11T08:26:29Z（03 任务 08:22:27Z 投递之后），声明分支 `issue/633-contracts-test-gap`、scope_key `contracts-identity-test-gap`、plan_version 1；同轮观察时 Issue #633 仍无开放 PR。#633 上的计划唯一性（同 scope_key 无更早计划或分叉）已按 ID 重读核验。
+- 同轮复核（约 08:36Z）：该分支已实际存在，HEAD `747f75ed361f478ab5cd46d84131f870cd1f7fdf`，相对 main `ahead_by=1 / behind_by=0`（状态 `ahead`）。即留言发布后 03 已推送首个提交；截至复核时刻尚未创建 PR，因此 #633 的 PR-1/4 仍属“未完成”，本文件不将其记为完成或通过。
+- 规则版本核验：01/02 引用的 `burncloud/burncloud-code@648d4af1…` 存在且为 main 祖先；当前 main `ae100e2`，08/11 角色 Prompt 在该区间仅新增标题编号、`执行平台`/“原生定时触发”等描述与 `调用边界` 段，规则正文无实质差异。核验未发现规则漂移导致的既有动作失效。
+
+### 4. 本轮 08 的写入与去重
+
+- 本轮无 08 协议留言：无新异常需要 `HARNESS_REPORT`（未配置管理 Issue，且异常为调度配置类、已在 BUG-DH-001 记录），故不发心跳或无变化留言。
+- 记录维护：本文件与 `issue-log.md` 同轮更新并创建文档 PR（URL 见 PR 描述与本轮输出）。
+- 原生互斥声明：本项目要求写操作前证明唯一写入者。本轮**未能**提供该证明（本会话未注册定时任务、`schedule_list=[]`，且 `docs/**` 上另有进行中的 [PR #41](https://github.com/burncloud/burncloud-code/pull/41) 重构，虽未触及本轮两文件）。故本文件不声称“同对象唯一写入权已核验”，该栏位保持“未验证”。
+
+### 下一轮增量化基线
+
+`main=0029e6c0`；`#870 HEAD=30c4cfb8`（4/4 green、conflicting、0 formal review、6 条留言）；`#633` 分支 `issue/633-contracts-test-gap` HEAD `747f75ed`（ahead 1，无 PR）；调度注册 6 条（01–06）。若注册清单变化、出现新 HEAD、新协议留言或 07/08/09 被注册，则重新核验 ST-01/ST-04 并更新本快照。
