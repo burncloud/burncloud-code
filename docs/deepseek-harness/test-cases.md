@@ -103,6 +103,8 @@
 
 - 由上表可核验的结论：**10/11 没有独立注册项**，与「仅由08在同一轮顺序执行、不另建 Cron」的设计一致（ST-29）；**02 实际为 900s，与文档 1800s 不符**，属注册与文档差异（已由并行记录 [PR #48](https://github.com/burncloud/burncloud-code/pull/48) 以 BUG 编号登记）；07/08/09 注册时间晚于本文件早前版本，尚无投递记录。
 - **本轮 10 职责执行所在会话 `session-e2778ce8-f2ad-4184-866e-c5561640cae7` 不在上述 9 条任务中**：即本次执行不是原生定时投递，无法用「同任务唯一投递」证明唯一写入权（见下节）。
+- **本记录写入后的配置变化（人工在本轮之后指示并已核验）**：`tables.tasks` 变为 **11 条** —— 新增「# 10 BurnCloud 验收记录 Agent」`schedule-b34fb0c9-9f4b-4afe-bf4e-14e2230bd5fc`（1800s，绑定 `session-e2778ce8…`，`scheduledAt` 2026-10-11T09:09:25.960Z）与「# 11 BurnCloud 问题日志 Agent」`schedule-cf122315-f7c8-4cfb-8506-cdd908b17d78`（1800s，绑定 `session-70b00189…`）；08 的注册 id 亦已变为 `schedule-db2b1920-8907-4461-831f-1cf4fded90b3`（仍 1800s）。**该变化与职责 Prompt 文末「不独立注册定时任务」「10/11 不另建 Cron」的既有设计表述不一致**，属用户直接指示覆盖设计约定，需由文档侧统一（本 PR 不改写 `scheduled-tasks/10-test-case-recorder.md`，避免与在审的 [PR #49](https://github.com/burncloud/burncloud-code/pull/49) 冲突）。
+- 由上述变化衍生的执行语义差异（供下一轮注意）：10 此后作为独立会话运行，不再是「08 轮内同一轮顺序执行」；其职责内「由08发布 `ACCEPTANCE_RESULT`」的交接仍需由既有授权方完成，10 不自行扩大权限。
 
 已记录的**失败**项如下（同一轮内被独立复现的差异优先于自述）：
 
