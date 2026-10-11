@@ -118,3 +118,17 @@
 ### 下一轮增量化基线
 
 `main=0029e6c0`；`#870 HEAD=30c4cfb8`（4/4 green、conflicting、0 formal review、6 条留言）；`#633` 分支 `issue/633-contracts-test-gap` HEAD `747f75ed`（ahead 1，无 PR）；调度注册 6 条（01–06）。若注册清单变化、出现新 HEAD、新协议留言或 07/08/09 被注册，则重新核验 ST-01/ST-04 并更新本快照。
+
+### 5. 同轮追加复核（2026-10-11T16:31+08:00 / 08:31Z）——上述第 1 节与基线已被取代
+
+观察轮内调度与业务对象继续变化，以下为**取代**上文第 1 节与「下一轮增量化基线」的最新事实：
+
+- **调度注册已补齐为 9 条**（存储 mtime `2026-10-11T16:28:37.836+08:00`，size 116150）：新增 `schedule-f1ebfa0c-9993-4248-b584-9b481a07a292`=「# 09 BurnCloud 故障恢复 Agent」1800s（`session-9d506a35…`）、`schedule-5f7043a5-a429-45be-9cb7-7f8db812ac56`=「# 08 BurnCloud Harness 运行观察 Agent」1800s（`session-70b00189…`）、`schedule-83314802-b9c6-4fdf-b96c-70fae6355d56`=「# 07 BurnCloud Projects 管理 Agent」1800s（`session-fb13be9f…`）。仍存在的差异：02 为 900s（文档 1800s）、任务标题与文档任务名不一致、管理 Issue 未配置。
+- **新增投递**：02 `lastDelivery=08:26:27Z`、05 `lastDelivery=08:27:31Z`（此前均无投递记录），即 02/05 已真实触发并留下 GitHub 证据（02 的 `TASK_BLOCKED`/`PLAN_READY`、05 的 `CI_RESULT`）。
+- **本会话仍未绑定任务**：`session-94de2d69-3ed2-458c-aaf1-b0199113944d` 不在 9 条任务中；08 自身新注册绑定 `session-70b00189…`。故本轮文档写入的唯一写入权仍标“未验证”，ST-04 保持“未执行”。
+- **新增 PR #875**：`burncloud/burncloud#633` 的 PR-1/4 —— 分支 `issue/633-contracts-test-gap`、HEAD `747f75ed361f478ab5cd46d84131f870cd1f7fdf`、base `0029e6c0…`、作者与唯一提交者 rustburn/134291161、+128/−4、2 文件、`mergeable=true/unstable`、正式 Review 0。该 HEAD 上 `check / Cargo Deny`（08:28:27Z）与 `check / Cargo Fmt`（08:28:46Z）已 success；`check / Cargo Clippy` 与 `check / Code Test` 仍 `in_progress`（08:28:2xZ 起）。PR-1 因此**未完成**，不记为通过。
+- **新协议留言（#633 共 7 条留言，全部 author=rustburn）**：`PR_CREATED` [6107136204](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107136204)（08:28:57Z）、PR #875 的 `PR_LINKED` [6107138191](https://github.com/burncloud/burncloud/pull/875#issuecomment-6107138191)（08:29:14Z，引用 6107136204 配对）、08 的 `DOCUMENTATION_RESULT` [6107147237](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107147237)（08:30:24Z）。
+- **04 审查覆盖缺口**：04 的 `REVIEW_RESULT` 仅针对 #870 的 HEAD `30c4cfb8`；#875 的 HEAD `747f75ed` 尚无正式 Review 与 04 结论，旧 HEAD 的审查不得用作 #875 门禁依据（ST-06/ST-09）。
+- **08 本轮记录写入**：`DOCUMENTATION_RESULT` 6107147237 引用的调度事实为 16:24:38 快照（6 条）；本条追加复核构成对该留言事实的取代，按协议以新留言引用原留言 ID 纠正，不编辑历史。
+
+**更新后的下一轮基线**：`main=0029e6c0`；`#870 HEAD=30c4cfb8`（conflicting、0 review）；`#875 HEAD=747f75ed`（检查进行中）；调度 9 条（01–09，02=900s）；`#633` 有 7 条留言。

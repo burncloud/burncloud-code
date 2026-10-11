@@ -51,8 +51,27 @@
 - 实际处理动作与结果：本轮仅观察与记录，未新增/删除/修改任何调度任务，未修改源码、CI、workflow 或分支保护，未合并/关闭任何对象，未重新开启任何已删除的调度注册（观察者不得自行修复或扩权）。
 - 负责 Agent 与下一动作：需操作者/人工在 Harness 中补齐注册（含 08 自身 1800s 任务）并校准 02 周期；08 下一轮以同一存储路径复核注册清单是否变化后再评估 ST-01/COMM-12。
 - 是否需要人工审批或规则调整：需要人工操作（注册/校准调度）；非权限规则调整。
-- 状态（待处理、处理中、阻塞、已验证解决）：待处理。
-- 解决证据与关联验收用例：暂无解决证据；关联 `test-cases.md` 的 ST-01、ST-04、COMM-12。
+- 状态（待处理、处理中、阻塞、已验证解决）：**处理中（同一观察轮内已部分变化）**——注册缺口在 16:28:37+08:00 的存储快照中已关闭（新增 07/08/09，共 9 条），故本问题不再以“07/08/09 未注册”作为当前事实；仍未解决的部分为 02 周期（900s vs 文档 1800s）、任务标题与文档名称不一致、管理 Issue 未配置。
+- 解决证据与关联验收用例：解决证据=同一路径存储快照（2026-10-11T16:28:37+08:00，size 116150，9 条任务，`schedule-f1ebfa0c…`=09/1800s、`schedule-5f7043a5…`=08/1800s、`schedule-83314802…`=07/1800s）；仍未验证项见 `test-cases.md` 的 ST-01/ST-04/COMM-12。
+
+## BUG-DH-001-R1（2026-10-11）：执行面复核——03 产出首个 PR 与 04 审查失效风险
+
+- 问题编号与日期：BUG-DH-001-R1（同轮追加复核，非新根因）；2026-10-11T16:3x+08:00（08:3xZ）。
+- Agent 与任务名称：08 BurnCloud Harness 运行观察 Agent（11 职责）。
+- 仓库、Issue/PR、当前 HEAD SHA：`burncloud/burncloud` issues #633/#634；PR [#870](https://github.com/burncloud/burncloud/pull/870) HEAD `30c4cfb8…`（2 天未变、`dirty`、0 formal review、6 条留言）、PR [#875](https://github.com/burncloud/burncloud/pull/875) HEAD `747f75ed361f478ab5cd46d84131f870cd1f7fdf`（base `0029e6c0…`，`mergeable=true/unstable`，1 commit=rustburn，+128/−4，2 文件，formal review 0）。
+- task_key、scope_key、plan_version、协议版本及规则commit SHA：`burncloud/burncloud#633` / `contracts-identity-test-gap` / plan_version 1；`burncloud/burncloud#634` / `main`；协议 `burncloud-harness-message/v1`。
+- 输入/结果message_id、comment ID、完整留言URL及前序链：03 在 #633 的 `DEVELOPMENT_STARTED` [6107118156](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107118156) → `PR_CREATED` [6107136204](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107136204)（08:28:57Z）→ PR #875 的 `PR_LINKED` [6107138191](https://github.com/burncloud/burncloud/pull/875#issuecomment-6107138191)（08:29:14Z，引用 6107136204）；08 的 `DOCUMENTATION_RESULT` [6107147237](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107147237)（08:30:24Z，`reply_to_comment_id=6107118156`）。
+- run/attempt与实际运行/原生互斥证据：PR #875 HEAD `747f75ed` 上 `check / Cargo Deny`（08:28:23Z→08:28:27Z）与 `check / Cargo Fmt`（08:28:24Z→08:28:46Z）已 `completed/success`；`check / Cargo Clippy`（08:28:24Z 起）与 `check / Code Test`（08:28:23Z 起）为 `in_progress`，`run_attempt` 尚未产生结论。调度注册：同一路径存储已含 9 条 active 任务，08 自身注册为 `schedule-5f7043a5-a429-45be-9cb7-7f8db812ac56`（1800s，绑定 `session-70b00189-86bc-49f5-8fed-d2493339cee6`）；**本会话 `session-94de2d69…` 仍未绑定任何任务**，故本轮记录写入的唯一写入权仍属“未验证”。
+- repair_chain_id、记录去重键与文档PR完整URL：无 repair_chain_id（无 CI 失败）；去重键 `burncloud/burncloud#633|contracts-identity-test-gap|first-pr-created`；文档 PR [#48](https://github.com/burncloud/burncloud-code/pull/48)（本文件与 `test-cases.md`）。
+- 首次/最近发生时间与累计修复/恢复次数：2026-10-11T08:28:18Z（PR #875 创建）；修复 0、重跑 0、恢复 0。
+- 已核实问题与证据链接：①#633 的 PR-1/4 已真实产出分支+PR，但 PR-1 的验收尚未完成（2/4 检查仍在执行）；②04 的 `REVIEW_RESULT` 只覆盖 PR #870 的旧 HEAD `30c4cfb8`，对 PR #875 的 HEAD `747f75ed` 无任何审查结论，按“HEAD 变化使旧证据失效”该旧审查不得作为 #875 的门禁依据；③PR #870 仍未处置冲突与被 #873 取代的断言（03 未在其上给出安全检查点），02 因此继续阻塞 #634 计划；④02 的 `TASK_BLOCKED` 与 01 的 `ISSUE_CLASSIFIED` 对 #870 的“4/4 success”描述仅在该旧 HEAD 成立，当前 main 已前进到 `0029e6c0`（`behind_by=4`）。
+- 原因（已核实、推测或未验证）：①②③为 API 实测事实；④中“main 前进导致 rebase 后必然失败”由 04/05 的留言结论支持（`record_success` 已清空退避计时器），未经本角色重新执行验证，标为“未执行验证”。
+- 影响范围与阻塞原因：影响 #634 的合并路径（等待人工审批而非可自动合并）与 #633 PR-1 的审查/CI 门禁；不阻塞其他对象的只读观察。
+- 实际处理动作与结果：仅记录与本轮文档维护；未审查、未改码、未重跑、未合并、未关闭、未推送任何业务分支。
+- 负责 Agent 与下一动作：04 需对 PR #875 当前 HEAD 提交 `REVIEW_RESULT`；05 需对其收集全部四项检查结果；03 需对 #870 给出安全检查点处置并推进 #633 PR-1 的检查闭环。
+- 是否需要人工审批或规则调整：PR #870 的冲突与断言处置属人工/03 决策；规则无需调整。
+- 状态（待处理、处理中、阻塞、已验证解决）：待处理（#875 检查进行中，#870 等待人工审批）。
+- 解决证据与关联验收用例：暂无；关联 `test-cases.md` 的 ST-06、ST-09、ST-24。
 
 ### 同轮已验证的执行异常（自纠正，无人工动作）
 
