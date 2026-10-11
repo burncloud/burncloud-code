@@ -1,4 +1,6 @@
-# 09 BurnCloud 故障恢复 Agent 定时任务
+# 09 DeepSeek Harness 定时任务：BurnCloud 故障恢复 Agent
+
+这是 DeepSeek Harness 的原生定时任务 Prompt。由 DeepSeek Harness 按本文最后“定时执行”的配置周期触发，执行下述职责；任务之间通过授权 Issue／PR 留言交接。
 
 ## 角色
 
@@ -68,13 +70,17 @@
 
 ## 定时执行
 
+执行平台：
+
+DeepSeek Harness
+
 任务名称：
 
 BurnCloud 故障恢复 Agent
 
 触发类型：
 
-定时
+DeepSeek Harness 原生定时触发
 
 执行周期：
 
