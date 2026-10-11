@@ -132,3 +132,10 @@
 - **08 本轮记录写入**：`DOCUMENTATION_RESULT` 6107147237 引用的调度事实为 16:24:38 快照（6 条）；本条追加复核构成对该留言事实的取代，按协议以新留言引用原留言 ID 纠正，不编辑历史。
 
 **更新后的下一轮基线**：`main=0029e6c0`；`#870 HEAD=30c4cfb8`（conflicting、0 review）；`#875 HEAD=747f75ed`（检查进行中）；调度 9 条（01–09，02=900s）；`#633` 有 7 条留言。
+
+### 6. 同轮末次复核（2026-10-11T16:3x+08:00 / 08:3xZ）：PR #875 `Code Test` 失败
+
+- `/commits/747f75ed…/check-runs` 实测：`check / Cargo Fmt` success、`check / Cargo Deny` success、`check / Cargo Clippy` success、**`check / Code Test` completed/failure**；对应 run `38124913496`（workflow `CI / GitHub-hosted Test`，event=pull_request，`run_attempt=1`，08:28:21Z 起、08:32:16Z 止），job `114427172516`。
+- 失败详情（真实日志）：`thread 'recharge_rows_round_trip_and_credit_the_balance' panicked at crates/identity/user/tests/identity_round_trip.rs:243:5: assertion failed: id > 0`，`test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.37s`。
+- 关联范围事实：PR #875 仅改 `crates/supply/contracts/tests/channel_contract.rs`（+45/−4）与 `crates/traffic/contracts/tests/traffic_contract.rs`（+83/−0），**未触及报错所在的 `crates/identity/user/tests/identity_round_trip.rs`**。因此“该失败是否由本 PR 引入、或属既有基线/环境性失败”**未验证**：本文件不判定为 PR 缺陷，也不判定为通过；需由 05 分类、必要时重跑 1 次并给出结论。
+- 到此时刻 PR #875 仍 `open`、`mergeable_state=unstable`、formal review 0，未满足任何合并门禁；`#870` 状态未变。按“旧 HEAD 成功不等于当前 HEAD 通过”，#875 的 PR-1/4 记为**CI 失败待诊断**。

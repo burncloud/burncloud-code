@@ -73,6 +73,25 @@
 - 状态（待处理、处理中、阻塞、已验证解决）：待处理（#875 检查进行中，#870 等待人工审批）。
 - 解决证据与关联验收用例：暂无；关联 `test-cases.md` 的 ST-06、ST-09、ST-24。
 
+## BUG-DH-002（2026-10-11）：PR #875 当前 HEAD 的 `check / Code Test` 失败，且失败文件不在该 PR 变更范围内
+
+- 问题编号与日期：BUG-DH-002；2026-10-11T16:3x+08:00（08:32Z 前后）。
+- Agent 与任务名称：08 BurnCloud Harness 运行观察 Agent（11 职责）。
+- 仓库、Issue/PR、当前 HEAD SHA：`burncloud/burncloud` #633 → PR [#875](https://github.com/burncloud/burncloud/pull/875)，HEAD `747f75ed361f478ab5cd46d84131f870cd1f7fdf`（base `0029e6c0…`）。
+- task_key、scope_key、plan_version、协议版本及规则commit SHA：`burncloud/burncloud#633` / `contracts-identity-test-gap` / 1；`burncloud-harness-message/v1`；规则 commit `ae100e2`（08 正文与角色 Prompt 已核验无实质漂移）。
+- 输入/结果message_id、comment ID、完整留言URL及前序链：输入为 03 的 `PR_CREATED` [6107136204](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107136204) 与 PR 侧 `PR_LINKED` [6107138191](https://github.com/burncloud/burncloud/pull/875#issuecomment-6107138191)；本轮 08 未在该 PR 发新留言（CI 失败分类属 05 职责），仅在 Issue 侧发 `DOCUMENTATION_RESULT` [6107160316](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107160316)。
+- run/attempt与实际运行/原生互斥证据：run `38124913496`（`CI / GitHub-hosted Test`，event=pull_request，`run_attempt=1`，08:28:21Z→08:32:16Z），job `114427172516`，`check / Code Test` = `completed/failure`；同 HEAD 另三项 `check / Cargo Fmt`、`check / Cargo Deny`、`check / Cargo Clippy` 均 `completed/success`（attempt 1）。失败断言：`crates/identity/user/tests/identity_round_trip.rs:243:5 assertion failed: id > 0`（`recharge_rows_round_trip_and_credit_the_balance`，`7 passed; 1 failed`）。
+- repair_chain_id、记录去重键与文档PR完整URL：**未建立** repair_chain_id——本角色不执行修复，且同根因首次有效失败的 `basis_id` 应由 05/03 在其结果留言中确立；去重键 `burncloud/burncloud#633|contracts-identity-test-gap|747f75ed|CodeTest|id>0`；文档 PR [#48](https://github.com/burncloud/burncloud-code/pull/48)。预算：`code_repair_rounds=0`、`ci_reruns=0`、`recovery_attempts=0`（本轮未重跑、未改码，不将计数默认成已消耗）。
+- 首次/最近发生时间与累计修复/恢复次数：首次 2026-10-11T08:32:16Z（run 完成）；累计修复 0、重跑 0、恢复 0。
+- 已核实问题与证据链接：①该 HEAD 的 `check / Code Test` 真实失败（run/job 与断言文本如上）；②失败文件 `crates/identity/user/tests/identity_round_trip.rs` **不在** PR #875 的变更文件列表（仅 `crates/supply/contracts/tests/channel_contract.rs` +45/−4、`crates/traffic/contracts/tests/traffic_contract.rs` +83/−0）；③`mergeable_state=unstable`、formal review 0，未满足合并门禁。
+- 原因（已核实、推测或未验证）：失败事实为已核实；**根因未验证**——“由本 PR 引入”与“既有基线/环境性失败”两种可能均未被本角色证明（本角色不得本地复现，需以 CI 证据与 05 的分类为准）。
+- 影响范围与阻塞原因：阻塞 PR #875 的合并路径与 #633 的 PR-1/4 验收；不阻塞只读观察与其他对象。若为既有基线失败，则不得把该 PR 记为引入缺陷，但该 HEAD 仍不可作为通过证据。
+- 实际处理动作与结果：仅记录（含 run/job/断言与变更范围对比）；未重跑、未改码、未审查、未合并、未留言到该 PR。
+- 负责 Agent 与下一动作：05 对该 HEAD 收集全部检查、按最新 attempt 分类并在 PR #875 发 `CI_RESULT`（必要时按预算重跑 1 次）；03 依据 05 结论决定修复或声明基线问题；04 补齐 #875 的 `REVIEW_RESULT`。
+- 是否需要人工审批或规则调整：若判定为既有基线失败，需人工决定是否单独立项；规则无需调整。
+- 状态（待处理、处理中、阻塞、已验证解决）：待处理（等待 05 分类结论）。
+- 解决证据与关联验收用例：暂无解决证据；关联 `test-cases.md` 的 ST-07、ST-09、ST-24 与本文件同轮快照第 6 节。
+
 ### 同轮已验证的执行异常（自纠正，无人工动作）
 
 - `burncloud/burncloud#633` 上 03 首次发布的 `DEVELOPMENT_STARTED` 为格式非法（comment ID 超出 Int32 导致 JSON 字段未渲染、Windows PowerShell ANSI 解码造成中文乱码）。API 核验该 comment `6107113095` 现已 404、Issue #633 当前仅 5 条普通留言，替代留言 [6107118156](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107118156) 自述删除原因且内容合法。与协议“发现错误后追加纠正、不删除历史”存在偏差，但已完成自纠正并披露，未产生错误业务动作；仅记录，不另立 Issue。
