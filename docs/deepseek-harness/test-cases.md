@@ -10,7 +10,7 @@
 
 | 编号 | 场景 | 预期结果 | 状态 |
 |---|---|---|---|
-| ST-01 | 原生任务安装与周期 | 01至09按30/15/10分钟配置；10/11仅08同轮执行，真实触发有证据 | 通过（限触发证据） |
+| ST-01 | 原生任务安装与周期 | 01至09按30/15/10分钟配置；10/11仅08同轮执行，真实触发有证据 | 部分通过（10/11无独立注册已核验；02为900s与文档1800s不符） |
 | ST-02 | 白名单新任务 | API核验原始Issue作者login/ID、开放及依赖，才在授权Issue交接 | 通过 |
 | ST-03 | 外部/非白名单Issue | 只读忽略，不留言、不认领、不关闭 | 通过 |
 | ST-04 | 重入与并发认领 | 核验原生互斥保证唯一写入者；无法证明时阻塞，认领留言不当锁 | 证据不足（不可复现唯一写入证据，记录见下） |
@@ -87,6 +87,22 @@
 - 目标分支与合并状态：PR #870 `state=open`、`merged=false`、`mergeable=false`、`mergeable_state=dirty`、正式 Review `0` 条、Review 线程 `0` 条（`pulls/870/reviews`、`pulls/870/comments`、`pulls/870` 实时查询）。当前 `main` = `0029e6c00ca1cbffdd894dc0174054a6026447a2`；PR 记录基线 `b2f31d65`。本次未发生任何合并，目标分支不因本轮变化。
 - 已合并增量（历史核验，非本轮动作）：#869 HEAD `c8e9a83d` → merge `30ea03f7`（4/4 检查 success，run 38088359464 等）、#871 HEAD `b6bf7fd0` → merge `ea4d7879`（4/4 检查 success，run 38090438432 等）。
 - 外部对象只读核验：Issue #801 原始创建者 `Heald-XYJ`/`279250250`，`comments=0`、`updated_at=2026-10-09T05:55:44Z`，本轮未留言、未认领、未关闭。
+- 原生注册事实（`~/.dsh/storages/schedule.json`，本记录直接读取 `tables.tasks`，mtime 2026-10-11T16:34:38+08:00，size 148611；9 条任务、每条绑定独立会话）：
+
+| 注册标题 | schedule id | everySeconds | 绑定会话 | 最近一次投递 |
+|---|---|---|---|---|
+| # 01 BurnCloud Autonomous R&D Manager | `schedule-697151b6-5dd6-4a39-9fd8-e0c250e49248` | 1800 | `session-9fc41f4c…` | 08:14:50Z |
+| # 02 BurnCloud 任务规划 Agent | `schedule-91abd46a-fb17-4d5e-9b91-7d3aae7a1d70` | **900** | `session-6c79d782…` | 08:26:27Z |
+| # 03 BurnCloud 代码开发 Agent | `schedule-efc30c9c-b107-4378-8333-4b9b8a4c6614` | 600 | `session-68e0b4e0…` | 08:32:27Z |
+| # 04 BurnCloud PR 审查 Agent | `schedule-4b776539-3ca7-47a7-a808-648893d14c6d` | 900 | `session-dc3d727b…` | 08:32:37Z |
+| # 05 BurnCloud CI 守护 Agent | `schedule-a24f2011-9c4e-4342-8eb1-66cf1d34f7b1` | 600 | `session-a8d2fb18…` | 08:27:31Z |
+| # 06 BurnCloud PR 合并控制 Agent | `schedule-11cb5842-bce7-452f-9307-0b63e5fb416d` | 600 | `session-562ee6e2…` | 08:34:38Z |
+| # 07 BurnCloud Projects 管理 Agent | `schedule-83314802-b9c6-4fdf-b96c-70fae6355d56` | 1800 | `session-fb13be9f…` | 未投递 |
+| # 08 BurnCloud Harness 运行观察 Agent | `schedule-5f7043a5-a429-45be-9cb7-7f8db812ac56` | 1800 | `session-70b00189…` | 未投递 |
+| # 09 BurnCloud 故障恢复 Agent | `schedule-f1ebfa0c-9993-4248-b584-9b481a07a292` | 1800 | `session-9d506a35…` | 未投递 |
+
+- 由上表可核验的结论：**10/11 没有独立注册项**，与「仅由08在同一轮顺序执行、不另建 Cron」的设计一致（ST-29）；**02 实际为 900s，与文档 1800s 不符**，属注册与文档差异（已由并行记录 [PR #48](https://github.com/burncloud/burncloud-code/pull/48) 以 BUG 编号登记）；07/08/09 注册时间晚于本文件早前版本，尚无投递记录。
+- **本轮 10 职责执行所在会话 `session-e2778ce8-f2ad-4184-866e-c5561640cae7` 不在上述 9 条任务中**：即本次执行不是原生定时投递，无法用「同任务唯一投递」证明唯一写入权（见下节）。
 
 已记录的**失败**项如下（同一轮内被独立复现的差异优先于自述）：
 
@@ -96,10 +112,9 @@
 
 ### 互斥核验结论（本轮阻塞项）
 
-- 本会话（10职责执行所在会话）`schedule_list` 实测为 `[]`，本会话未绑定任何原生任务；因此在**本会话内**无法证明唯一写入权，本记录不把留言中的互斥声明当作锁。
-- 全局调度存储 `~/.dsh/storages/schedule.json` 显示 01–09 各有独立任务与独立绑定会话（快照与投递记录见并行观察记录 [PR #48](https://github.com/burncloud/burncloud-code/pull/48)）；即每个职责由自己的会话执行，本会话不在其中。
-- 同一轮内 `docs/deepseek-harness/test-cases.md` 同时存在本 PR 与 [PR #48](https://github.com/burncloud/burncloud-code/pull/48) 两个写入者，且 [PR #49](https://github.com/burncloud/burncloud-code/pull/49) 也改写同目录多个文件：**同文件并发写入已实际发生**，构成 ST-04 / R6「同一文件同一时间只允许一个写入者」的真实反例证据。
-- 按此结论：ST-04、COMM-03 保持「证据不足」；本列表状态改写与 PR 创建以「实质无冲突风险 + 可回退」为限，不声称已核验唯一写入权；记录文件的合并顺序与去重需由06/人工串行决定。
+- 本会话 `schedule_list` 实测为 `[]`，与上述存储一致：本会话未绑定任何原生任务；因此**不能**用「同一任务的单次投递」证明本执行是当轮唯一写入者。
+- 同一轮内 `docs/deepseek-harness/test-cases.md` 同时存在本 PR 与 [PR #48](https://github.com/burncloud/burncloud-code/pull/48) 两个写入者（同一账号、不同分支、均基于 `ae100e2`），且 [PR #49](https://github.com/burncloud/burncloud-code/pull/49) 也改写同目录多个文件：**同文件并发写入已实际发生**，构成 ST-04 / R6「同一文件同一时间只允许一个写入者」的真实反例证据。
+- 结论：ST-04、COMM-03 保持「证据不足」，不声称已核验唯一写入权；本轮记录以「只追加可核验事实、保留可回退性」为限，记录文件的合并顺序与去重需由06/人工串行决定，本 PR 不自行合并或强推。
 
 ### 本轮阻塞与未验项
 
