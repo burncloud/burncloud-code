@@ -1,42 +1,33 @@
-# DeepSeek Harness原生定时任务清单
+# DeepSeek Harness 单Agent注册清单
 
-当前交付是DeepSeek Harness可直接复制的中文定时任务Prompt。基础模式共9个定时任务，不依赖n8n、Webhook、外部数据库或新建派发服务。
+## 唯一注册入口
 
-| Prompt | 中文任务名称 | 周期 | 职责 |
+| 文件 | 中文任务名称 | 周期 | 执行者 |
 |---|---|---|---|
-| [01](scheduled-tasks/01-issue-scanner.md) | BurnCloud Issue 自动巡检 Agent | 每30分钟 | 发现授权候选任务 |
-| [02](scheduled-tasks/02-task-planner.md) | BurnCloud 任务规划 Agent | 每30分钟 | 在Issue发布完整计划和验收条件 |
-| [03](scheduled-tasks/03-coding-agent.md) | BurnCloud 代码开发 Agent | 每10分钟 | 轮询Issue/PR计划与修复留言，续接独占分支 |
-| [04](scheduled-tasks/04-pr-reviewer.md) | BurnCloud PR 审查 Agent | 每15分钟 | 差异、风险与需求审查 |
-| [05](scheduled-tasks/05-ci-guardian.md) | BurnCloud CI 守护 Agent | 每10分钟 | 查询CI并在PR发布诊断/证据 |
-| [06](scheduled-tasks/06-merge-controller.md) | BurnCloud PR 合并控制 Agent | 每10分钟 | 重核当前HEAD全部门禁 |
-| [07](scheduled-tasks/07-project-manager.md) | BurnCloud Projects 管理 Agent | 每30分钟 | 同步既有自动化字段 |
-| [08](scheduled-tasks/08-harness-observer.md) | BurnCloud Harness 运行观察 Agent | 每30分钟 | 观察任务并按10/11职责维护记录 |
-| [09](scheduled-tasks/09-recovery-manager.md) | BurnCloud 故障恢复 Agent | 每30分钟 | 核验实际停止与安全恢复条件 |
+| [00-autonomous-agent.md](scheduled-tasks/00-autonomous-agent.md) | BurnCloud 自主研发 Agent | 每30分钟 | 同一个Agent，按实际进度执行必要阶段 |
 
-周期是触发间隔，不是完成时限，也不是强制重启时间。上轮仍运行时不创建第二个写入者。任务时区显式采用Asia/Shanghai，审计时间同时记录UTC。若Harness支持起始时间偏移，可分散触发；不把偏移能力作为必备功能。
+基础配置只有一个定时任务。01至11均为00按需读取的阶段规范，不能按目录逐文件注册。周期是触发间隔，不是超时或强制重启依据；上轮仍运行时退出，不新建第二Agent。
 
-## 开发与失败处理的纯定时路径
+## 按需阶段
 
-02在Issue发布PLAN_READY → 03下一轮开发并双向关联PR → 04/05在PR发布审查/CI结果 → 03响应当前HEAD修复留言 → 新HEAD重新核验后06重核合并。
-
-CI等待时03在Issue/PR发布TASK_PROGRESS检查点并结束本轮；下次定时运行再次查询真实状态。05直接处理轮询发现的CI失败，不等待Webhook，也不需要独立事件消费者。无工作时各任务尽快结束，不加载整个仓库历史。
-
-## 记录职责与可选参考
-
-| 文件 | 使用方式 | 基础模式是否独立注册 |
+| 编号 | 阶段规范 | 使用条件 |
 |---|---|---|
-| [10验收记录](scheduled-tasks/10-test-case-recorder.md) | 08读取此职责并核验真实证据后更新指定文件 | 否 |
-| [11问题日志](scheduled-tasks/11-issue-log-recorder.md) | 08读取此职责并按新异常更新指定文件 | 否 |
-| [工作选择与互斥](agent-dispatcher.md) | 03在定时任务内部选择工作及核验唯一写入权 | 否 |
-| [外部CI事件参考](event-tasks/ci-failure-handler.md) | 仅未来已授权且能力已核验时加速05同一处理流程 | 否，可选增强 |
+| [01](scheduled-tasks/01-issue-scanner.md) | Issue发现 | 需要新候选或候选事实变化 |
+| [02](scheduled-tasks/02-task-planner.md) | 规划 | 缺少有效计划或需求依据变化 |
+| [03](scheduled-tasks/03-coding-agent.md) | 开发 | 有有效计划或当前HEAD修复事项 |
+| [04](scheduled-tasks/04-pr-reviewer.md) | 自检/正式Review查询 | Diff、需求、目标基线或Review变化 |
+| [05](scheduled-tasks/05-ci-guardian.md) | CI诊断 | 当前HEAD远端检查需要更新 |
+| [06](scheduled-tasks/06-merge-controller.md) | 合并门禁 | 可能满足条件，且有原有合并授权 |
+| [07](scheduled-tasks/07-project-manager.md) | 看板同步 | 授权自动化字段实际需要改变 |
+| [08](scheduled-tasks/08-harness-observer.md) | 观察 | 本轮出现运行/证据异常 |
+| [09](scheduled-tasks/09-recovery-manager.md) | 恢复 | 实际停止、安全移交或未知动作对账 |
+| [10](scheduled-tasks/10-test-case-recorder.md) | 验收记录 | 新真实验收或用例设计变化 |
+| [11](scheduled-tasks/11-issue-log-recorder.md) | 问题记录 | 新异常或既有问题实际状态变化 |
 
-## 实施边界
+所有阶段均无独立周期、没有独立Agent。阶段之间直接复用当前上下文，不等待留言交接或下一触发；每轮无需执行全部阶段。外部CI事件参考不注册，等待CI时保存业务检查点并结束，下轮同一入口核验变化。
 
-- 使用DeepSeek Harness实际提供的定时配置、GitHub访问、运行状态与原生互斥能力；没有能力时标记具体限制，不虚构新服务或事件接口。
-- 写操作前重新读取GitHub状态并核验互斥。按[留言协议](communication-protocol.md)交接；首次启动或缓存丢失时完整分页对账，不能丢弃批次外对象。
-- 角色职责与最小权限不变：03开发，04审查，05CI诊断，06合并；08仅可额外按10/11边界维护授权记录文件。
-- 定时启动本身可能有模型成本；无变化时缩短执行，不承诺零模型调用。
-- 本PR只完成Prompt文档，不在Harness中实际注册任务，不修改CI，不配置Webhook或部署其他系统。
+## 迁移与工作量
 
-各角色的留言类型和接收者见[消息表](communication-protocol.md#消息类型与职责)。07看板和08文档输出不替代留言交接；10/11执行结果统一由08发布。安装时使用同一份[共同配置](installation.md)。
+先按[安装清单](installation.md)停用并核验旧01至09任务实际停止，保留原PR/分支和历史留言，再启用00。该PR只改变文档，不操作用户Harness配置。
+
+复用同轮规则、需求、Diff、CI和预算；关键事实变化或外部写操作前重核。变化展示与记录聚合，省去多Agent重复读取/分析和逐阶段回执。真实token/费用须测量，不仅比较触发次数。默认只深处理一个业务增量，其他候选不丢失、下轮继续。
