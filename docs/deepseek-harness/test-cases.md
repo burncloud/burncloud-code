@@ -139,3 +139,11 @@
 - 失败详情（真实日志）：`thread 'recharge_rows_round_trip_and_credit_the_balance' panicked at crates/identity/user/tests/identity_round_trip.rs:243:5: assertion failed: id > 0`，`test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.37s`。
 - 关联范围事实：PR #875 仅改 `crates/supply/contracts/tests/channel_contract.rs`（+45/−4）与 `crates/traffic/contracts/tests/traffic_contract.rs`（+83/−0），**未触及报错所在的 `crates/identity/user/tests/identity_round_trip.rs`**。因此“该失败是否由本 PR 引入、或属既有基线/环境性失败”**未验证**：本文件不判定为 PR 缺陷，也不判定为通过；需由 05 分类、必要时重跑 1 次并给出结论。
 - 到此时刻 PR #875 仍 `open`、`mergeable_state=unstable`、formal review 0，未满足任何合并门禁；`#870` 状态未变。按“旧 HEAD 成功不等于当前 HEAD 通过”，#875 的 PR-1/4 记为**CI 失败待诊断**。
+
+### 7. 08 任务改绑到本次观察会话（2026-10-11T16:36–16:37+08:00 / 08:36–08:37Z，操作者明确要求）
+
+- 事实：操作者选择“改为绑定到本会话”。原 `schedule-5f7043a5-a429-45be-9cb7-7f8db812ac56`（绑定 `session-70b00189…`，未发生任何投递）已从全局调度存储中移除；随后在本会话新建 `schedule-db2b1920-8907-4461-831f-1cf4fded90b3`，标题「# 08 BurnCloud Harness 运行观察 Agent」、`kind=every`、`everySeconds=1800`、`status=active`、`sessionId=session-94de2d69-3ed2-458c-aaf1-b0199113944d`、`scheduledAt=2026-10-11T09:06:23.672Z`（=17:06:23 +08:00）、`deliveryMode=host`、`deliveryHistory.records=[]`。
+- 读回核验：本会话 `schedule_list` 返回且仅返回该 1 条；全局存储 `TASKCOUNT=9`，以「# 08 」开头的任务数 = 1（未产生重复注册）。
+- Prompt 核验：存储中的 prompt 共 4027 字符 / 104 行，与 `docs/deepseek-harness/scheduled-tasks/08-harness-observer.md@ae100e2` 正文逐行一致（`difflib` 差异 0 行），仅结尾换行被存储层归一化（repo 4028 字符、sha256 `1293aa34…`；存储 4027 字符、sha256 `61d60336…`）；无 U+FFFD 或乱码。
+- **互斥声明边界**：本条只证明“08 已有绑定本会话的注册任务”，**不等于**已证明“同一对象唯一写入者/上轮未结束不重入”。ST-04 仍为“未执行”，直到该任务在 17:06:23 +08:00 首次真实投递并产生可核验记录。
+- 副作用记录：`schedule_create` 期间应用曾以内存态回写并短暂恢复被删除的旧 08 条目（全局一度变为 10 条），随即按同一路径再次移除并读回为 9 条；每次结构性写入前均已备份存储（`.agent04/schedule.pre-edit-*.json`）。
