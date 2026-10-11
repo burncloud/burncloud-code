@@ -15,16 +15,16 @@
 
 ## Agent 列表
 
-- master-orchestrator：总调度
-- issue-scanner：Issue 扫描
-- task-planner：任务规划
-- coding-agent：代码开发
-- pr-reviewer：PR 审查
-- ci-guardian：CI 监控
-- merge-controller：合并控制
-- project-manager：Projects 同步
-- harness-observer：Harness 行为观察
-- recovery-manager：故障恢复
+- Master Orchestrator：总调度
+- Issue Scanner：Issue 扫描
+- Task Planner：任务规划
+- Coding Agent：代码开发
+- PR Reviewer：PR 审查
+- CI Guardian：CI 监控
+- Merge Controller：合并控制
+- Project Manager：Projects 同步
+- Harness Observer：Harness 行为观察
+- Recovery Manager：故障恢复
 
 ## 核心规则
 
@@ -35,10 +35,12 @@
 - 禁止修改 CI Workflow 绕过门禁。
 - GitHub Actions 是唯一测试执行环境。
 
-## 运行文档
+## 文档入口
 
-- architecture/ 系统架构
-- agents/ Agent 定义
-- scheduler/ 定时任务
-- policies/ 安全规则
-- testing/ 验收记录
+- agent-topology.md：Agent 架构
+- scheduled-task-overview.md：定时任务总览
+- scheduled-tasks/：每个 Agent 的独立定时任务定义
+- test-cases.md：验收记录
+- issue-log.md：问题记录
+
+DeepSeek Harness 应优先读取 scheduled-tasks 下的任务文件执行自动化流程。
