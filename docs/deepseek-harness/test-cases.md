@@ -68,6 +68,8 @@
 
 ### 轮次 A — 2026-10-11（由08按10职责记录）
 
+分页留言清单、调度注册快照与逐项核验事实见同一轮的并行观察记录 [PR #48](https://github.com/burncloud/burncloud-code/pull/48)；本条只记录**本执行独立产生的增量证据与不一致结论**，不重复其清单。
+
 - 记录者：08（10职责）；记录轮次时间：2026-10-11T08:2x UTC（精确写入时间以本文件commit为准）；验证级别：真实Harness触发 + 真实远端CI。
 - 输入证据：开发仓库 `burncloud/burncloud` 的开放Issue #633/#634/#635/#637/#652/#734 与开放PR #870 的分页普通留言原文；GitHub API 实时状态（身份、HEAD、CI、Review、冲突）。
 - 身份核验：`gh api /user` = login `rustburn`、id `134291161`；6 个Issue原始创建者均为 `rustburn`/`134291161`；PR #870 作者 `rustburn`/`134291161`，1 commit，改动仅 `crates/traffic/router/src/channel_state.rs`（+420/−0）。
@@ -86,35 +88,24 @@
 - 已合并增量（历史核验，非本轮动作）：#869 HEAD `c8e9a83d` → merge `30ea03f7`（4/4 检查 success，run 38088359464 等）、#871 HEAD `b6bf7fd0` → merge `ea4d7879`（4/4 检查 success，run 38090438432 等）。
 - 外部对象只读核验：Issue #801 原始创建者 `Heald-XYJ`/`279250250`，`comments=0`、`updated_at=2026-10-09T05:55:44Z`，本轮未留言、未认领、未关闭。
 
-### 协议留言索引（本轮分页读取并按ID重读）
+已记录的**失败**项如下（同一轮内被独立复现的差异优先于自述）：
 
-| comment_id | 对象 | 类型 | from→to | scope_key | plan | head | 字段核验 |
-|---|---|---|---|---|---|---|---|
-| [6106806938](https://github.com/burncloud/burncloud/issues/633#issuecomment-6106806938) | #633 | ISSUE_CLASSIFIED | 01→02,07 | issue | null | null | 合规 |
-| [6106807242](https://github.com/burncloud/burncloud/issues/634#issuecomment-6106807242) | #634 | ISSUE_CLASSIFIED | 01→02,07 | issue | null | null | 合规 |
-| [6106807460](https://github.com/burncloud/burncloud/issues/635#issuecomment-6106807460) | #635 | ISSUE_CLASSIFIED | 01→02,07 | issue | null | null | 合规 |
-| [6106807738](https://github.com/burncloud/burncloud/issues/637#issuecomment-6106807738) | #637 | ISSUE_CLASSIFIED | 01→02,07 | issue | null | null | 合规 |
-| [6106807972](https://github.com/burncloud/burncloud/issues/652#issuecomment-6106807972) | #652 | ISSUE_CLASSIFIED | 01→02,07 | issue | null | null | 合规 |
-| [6106808176](https://github.com/burncloud/burncloud/issues/734#issuecomment-6106808176) | #734 | ISSUE_CLASSIFIED | 01→02,07 | issue | null | null | 合规 |
-| [6106886782](https://github.com/burncloud/burncloud/issues/633#issuecomment-6106886782) | #633 | PLAN_READY | 02→03,07 | contracts-identity-test-gap | 1 | null | 合规 |
-| [6106887760](https://github.com/burncloud/burncloud/issues/635#issuecomment-6106887760) | #635 | PLAN_READY | 02→03,07 | platform-node-server-test-gap | 1 | null | 合规 |
-| [6106888575](https://github.com/burncloud/burncloud/issues/634#issuecomment-6106888575) | #634 | TASK_BLOCKED | 02→07,08,09 | issue | null | 30c4cfb8… | 合规 |
-| [6106889319](https://github.com/burncloud/burncloud/issues/637#issuecomment-6106889319) | #637 | TASK_BLOCKED | 02→07,08,09 | issue | null | null | 合规 |
-| [6106890364](https://github.com/burncloud/burncloud/issues/652#issuecomment-6106890364) | #652 | TASK_BLOCKED | 02→07,08,09 | issue | null | null | 合规 |
-| [6106896060](https://github.com/burncloud/burncloud/pull/870#issuecomment-6106896060) | PR #870 | REVIEW_RESULT | 04→03,06,07 | main | null | 30c4cfb8… | 合规 |
-| [6107056836](https://github.com/burncloud/burncloud/pull/870#issuecomment-6107056836) | PR #870 | CI_RESULT | 05→03,04,06,07 | main | null | 30c4cfb8… | 合规（`updated_at` 晚于 `created_at`，见下） |
-| [6107118156](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107118156) | #633 | DEVELOPMENT_STARTED | 03→07 | contracts-identity-test-gap | 1 | `""` | **不合规：`source_comment_ids` 为标量、`head_sha` 为空字符串** |
+- **COMM-01 失败**：comment [6107118156](https://github.com/burncloud/burncloud/issues/633#issuecomment-6107118156)（03 的 `DEVELOPMENT_STARTED`）的 `source_comment_ids` 为标量 `6106886782` 而非升序去重数组，且 `head_sha` 为空字符串 `""`（协议要求完整 40 位 HEAD 或 `null`）。其余 13 条留言字段齐全、`message_id` 四段结构、`basis_id` 为 64 位小写十六进制。
+- **编辑核验**：[6107056836](https://github.com/burncloud/burncloud/pull/870#issuecomment-6107056836) 的 `updated_at`（08:18:32Z）晚于 `created_at`（08:18:20Z），正文仍是同一次 CI 对账结果；其余 13 条 `created_at == updated_at`。
+- **删除核验**：`6107118156` 自述曾于 08:25:48Z 发布 comment `6107113095` 后删除；按该 ID 重查不再返回，与自述一致，被删留言不能作为输入引用。
 
-- 唯一性：14 条留言的 `message_id` 与 `comment_id` 均无重复；`message_id` 均为 `task_key|from|type|64位十六进制digest` 四段结构，`basis_id` 均为 64 位小写十六进制。
-- 编辑核验：`6107056836` 的 `updated_at`（2026-10-11T08:18:32Z）晚于 `created_at`（08:18:20Z），正文内容为同一次 CI 对账结果；其余 13 条 `created_at == updated_at`。
-- 删除核验：`6107118156` 的 payload 自述曾于 2026-10-11T08:25:48Z 发布 comment `6107113095` 后删除。对该ID的重新查询不再返回该留言，与自述一致；被删留言不在本索引内，也无法作为输入引用。
-- 互斥核验（阻塞项）：本会话 `schedule_list` 实测为空数组，无法复现 04/05/03 留言所引用的 `schedule-b5657fd7…`、`schedule-a24f2011…`、`schedule-efc30c9c…` 任务及其会话归属。这些引用只能作为发送角色的自述证据，不等同于独立可复现的唯一写入证明；由此 **ST-04 / COMM-03 保持“证据不足”**，本轮的记录文件写入与 `ACCEPTANCE_RESULT` 交接需由父任务在能证明唯一写入权时完成，本条不把留言当作锁。
+### 互斥核验结论（本轮阻塞项）
+
+- 本会话（10职责执行所在会话）`schedule_list` 实测为 `[]`，本会话未绑定任何原生任务；因此在**本会话内**无法证明唯一写入权，本记录不把留言中的互斥声明当作锁。
+- 全局调度存储 `~/.dsh/storages/schedule.json` 显示 01–09 各有独立任务与独立绑定会话（快照与投递记录见并行观察记录 [PR #48](https://github.com/burncloud/burncloud-code/pull/48)）；即每个职责由自己的会话执行，本会话不在其中。
+- 同一轮内 `docs/deepseek-harness/test-cases.md` 同时存在本 PR 与 [PR #48](https://github.com/burncloud/burncloud-code/pull/48) 两个写入者，且 [PR #49](https://github.com/burncloud/burncloud-code/pull/49) 也改写同目录多个文件：**同文件并发写入已实际发生**，构成 ST-04 / R6「同一文件同一时间只允许一个写入者」的真实反例证据。
+- 按此结论：ST-04、COMM-03 保持「证据不足」；本列表状态改写与 PR 创建以「实质无冲突风险 + 可回退」为限，不声称已核验唯一写入权；记录文件的合并顺序与去重需由06/人工串行决定。
 
 ### 本轮阻塞与未验项
 
-- 未验证项：任何“文件已在GitHub写入”的事实——本记录内容已由10职责整理，但**父任务本轮未确认唯一写入权，故未创建文档分支与PR**；在PR URL产生前 `DOCUMENTATION_RESULT` / `ACCEPTANCE_RESULT` 不得声称已交接。
 - 未覆盖验收：ST-06/#634 的聚合报告项、#633 并发首用户注册角色策略（人工裁决）、#635 平台/node/server、#637 CI Required 门禁（需改仓库规则集，属人工）、#652 额度单位权威冲突（Domain Owner 裁决）。
 - 源码处置项（非本轮CI失败）：PR #870 的 `a_success_leaves_the_backoff_timer_set_so_the_model_stays_unavailable` 固定的是 `main` 已修复的缺陷（#872 由 #873 修复）且与 `main` 真实冲突；处置为关闭（被 #873 取代）或按新基线重写，属人工与03决策——本轮未合并、未关闭、未rebase、未push。
+- 本轮之后出现的新事实（08:26Z 起，晚于本记录快照，未纳入上表状态）：#633 已创建 PR #875（分支 `issue/633-contracts-test-gap`，HEAD `747f75ed…`），并新增 `PR_CREATED`／`PR_LINKED`／08 的 `DOCUMENTATION_RESULT` 留言；PR #875 的 `check / Cargo Clippy` 与 `check / Code Test` 在快照时刻仍 `in_progress`，故 PR-1/4 不记为通过。
 - 未执行任何本地编译/测试；所有CI结论来自 GitHub Actions 的真实 run/job 与日志。
 
 ## 每次真实执行的记录字段
