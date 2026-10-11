@@ -1,4 +1,6 @@
-# 05 BurnCloud CI 守护 Agent 定时任务
+# 05 DeepSeek Harness 定时任务：BurnCloud CI 守护 Agent
+
+这是 DeepSeek Harness 的原生定时任务 Prompt。由 DeepSeek Harness 按本文最后“定时执行”的配置周期触发，执行下述职责；任务之间通过授权 Issue／PR 留言交接。
 
 ## 角色
 
@@ -78,13 +80,17 @@ Webhook未配置时保持本定时闭环正常运行，事件能力标为未启�
 
 ## 定时执行
 
+执行平台：
+
+DeepSeek Harness
+
 任务名称：
 
 BurnCloud CI 守护 Agent
 
 触发类型：
 
-定时
+DeepSeek Harness 原生定时触发
 
 执行周期：
 
