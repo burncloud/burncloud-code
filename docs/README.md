@@ -20,6 +20,10 @@ BAM 是本地代码编辑、GitHub Projects 管理与 GitHub Actions 远端验�
 | 运维 | [安装](./operations/installation.md)、[恢复](./operations/recovery.md) | 部署、回滚、诊断 |
 | 发布 | [最终验收](./release/final-acceptance.md) | 发布判定 |
 
+## DeepSeek Harness 测试记录
+
+- [DeepSeek Harness 测试与对照档案](./deepseek-harness-evaluation/README.md)：记录定时任务、Issue/PR 白名单、CI/合并门禁及多 Agent 并发的实测证据和回归用例；**不作为产品能力已实现或 CI 通过的证明**。
+
 ## 冲突优先级
 本地零编译零测试、未经明确单独授权严禁修改 CI、用户合并授权、GitHub 最新 HEAD 证据、工作区数据保护为不可削弱的全局 P0 约束；旧文件中出现“默认禁止全量测试”等宽松措辞时按此执行。其余按 PRD 上位意图→模块设计→细节设计处理，冲突时提交 ADR 而非默默选择。本文所列目录、类型和流程是**设计要求**；未经 CI 验证不可标记已实现。
 
