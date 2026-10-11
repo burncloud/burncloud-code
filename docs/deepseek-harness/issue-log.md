@@ -2,7 +2,7 @@
 
 ## 目的与维护位置
 
-记录异常事实、阻塞与处理证据，避免重复失败。本文件由 `11-issue-log-recorder.md` 维护，位置为文档仓库的 `docs/deepseek-harness/issue-log.md`；不另建 `testing/` 路径，也不是独立定时任务 Prompt。
+记录异常事实、阻塞与处理证据，避免重复失败。本文件由 `11-issue-log-recorder.md` 维护，位置为文档仓库的 `docs/deepseek-harness/issue-log.md`；不另建 `testing/` 路径，也不是独立调度入口。
 
 ## 记录规则
 
@@ -15,7 +15,8 @@
 - 问题编号与日期：
 - Agent 与任务名称：
 - 仓库、Issue/PR、当前 HEAD SHA：
-- 去重键与首次/最近发生时间：
+- 触发类型、delivery、run attempt、计划版本及去重键：
+- 首次/最近发生时间与累计修复/恢复次数：
 - 已核实问题与证据链接：
 - 原因（已核实、推测或未验证）：
 - 影响范围与阻塞原因：
