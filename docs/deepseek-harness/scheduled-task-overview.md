@@ -1,52 +1,40 @@
-# DeepSeek Harness 调度总览
+# DeepSeek Harness原生定时任务清单
 
-本表是安装任务的显式清单，与各Prompt末尾的“执行配置”一致。目录或文件存在不代表任务已启用，不允许对 `scheduled-tasks/*.md` 自动逐文件注册Cron。
+当前交付是DeepSeek Harness可直接复制的中文定时任务Prompt。基础模式共9个定时任务，不依赖n8n、Webhook、外部数据库或新建派发服务。
 
-## 8个定时入口
-
-| 文件 | 中文任务名称 | 周期 | 固定触发偏移 | 本轮工作范围 |
-|---|---|---|---|---|
-| [01-issue-scanner.md](scheduled-tasks/01-issue-scanner.md) | BurnCloud Issue 自动巡检 Agent | 每30分钟 | 周期起点+0分钟 | Issue增量发现、白名单和依赖分类 |
-| [02-task-planner.md](scheduled-tasks/02-task-planner.md) | BurnCloud 任务规划 Agent | 每30分钟 | 周期起点+2分钟 | 只规划新候选项或失效计划 |
-| [04-pr-reviewer.md](scheduled-tasks/04-pr-reviewer.md) | BurnCloud PR 审查 Agent | 每15分钟 | 周期起点+3分钟 | 变化PR的需求、Diff和风险 |
-| [05-ci-guardian.md](scheduled-tasks/05-ci-guardian.md) | BurnCloud CI 守护 Agent | 每10分钟 | 周期起点+1分钟 | 当前HEAD CI对账、故障补偿和有限重跑 |
-| [06-merge-controller.md](scheduled-tasks/06-merge-controller.md) | BurnCloud PR 合并控制 Agent | 每10分钟 | 周期起点+4分钟 | 已有完整证据PR的最终门禁 |
-| [07-project-manager.md](scheduled-tasks/07-project-manager.md) | BurnCloud Projects 管理 Agent | 每30分钟 | 周期起点+6分钟 | 变化项目项的既有自动化字段 |
-| [08-harness-observer.md](scheduled-tasks/08-harness-observer.md) | BurnCloud Harness 运行观察 Agent | 每30分钟 | 周期起点+8分钟 | 健康、成本、违规与新记录 |
-| [09-recovery-manager.md](scheduled-tasks/09-recovery-manager.md) | BurnCloud 故障恢复 Agent | 每30分钟 | 周期起点+12分钟 | 已确认停止或异常任务的安全恢复 |
-
-偏移是建议配置，用于分散同一时刻唤醒；按调度器统一的时间锚点计算，不是前一任务完成时间的偏移。时区显式使用 `Asia/Shanghai`，接收和审计时间同时保存UTC。不同周期互不依赖，无须等待前一轮全部完成；任务尚在运行时租约控制重入。
-
-## 2个事件入口
-
-| 文件 | 中文任务名称 | 触发方式 | 执行行为 |
+| Prompt | 中文任务名称 | 周期 | 职责 |
 |---|---|---|---|
-| [03-coding-agent.md](scheduled-tasks/03-coding-agent.md) | BurnCloud 代码开发 Agent | 派发器的新开发/审查修复/CI修复事件 | 续接原会话，持续推进可执行工作；等待时保存检查点并释放槽 |
-| [ci-failure-handler.md](event-tasks/ci-failure-handler.md) | BurnCloud CI 失败处理 Agent | 校验后的GitHub Webhook；05定时对账补偿同一入口 | 验证、去重和路由；不独立启动第二条修复链 |
+| [01](scheduled-tasks/01-issue-scanner.md) | BurnCloud Issue 自动巡检 Agent | 每30分钟 | 发现授权候选任务 |
+| [02](scheduled-tasks/02-task-planner.md) | BurnCloud 任务规划 Agent | 每30分钟 | 保存实施计划和验收条件 |
+| [03](scheduled-tasks/03-coding-agent.md) | BurnCloud 代码开发 Agent | 每10分钟 | 主动读取计划/修复项，续接独占分支 |
+| [04](scheduled-tasks/04-pr-reviewer.md) | BurnCloud PR 审查 Agent | 每15分钟 | 差异、风险与需求审查 |
+| [05](scheduled-tasks/05-ci-guardian.md) | BurnCloud CI 守护 Agent | 每10分钟 | 主动查询CI、诊断并保存修复项 |
+| [06](scheduled-tasks/06-merge-controller.md) | BurnCloud PR 合并控制 Agent | 每10分钟 | 重核当前HEAD全部门禁 |
+| [07](scheduled-tasks/07-project-manager.md) | BurnCloud Projects 管理 Agent | 每30分钟 | 同步既有自动化字段 |
+| [08](scheduled-tasks/08-harness-observer.md) | BurnCloud Harness 运行观察 Agent | 每30分钟 | 观察任务并按10/11职责维护记录 |
+| [09](scheduled-tasks/09-recovery-manager.md) | BurnCloud 故障恢复 Agent | 每30分钟 | 核验实际停止与安全恢复条件 |
 
-代码开发事件启动后可以持续运行，但不设置每30分钟重启。CI失败入口处理的是外部Webhook，不新增GitHub Actions Workflow；没有事件接收能力时05维持远端验证闭环，并记录即时入口未启用。
+周期是触发间隔，不是完成时限，也不是强制重启时间。上轮仍运行时不创建第二个写入者。任务时区显式采用Asia/Shanghai，审计时间同时记录UTC。若Harness支持起始时间偏移，可分散触发；不把偏移能力作为必备功能。
 
-## 控制能力与记录职责
+## 开发与失败处理的纯定时路径
 
-| 文件 | 调用者 | 调用时机 | 独立注册 |
-|---|---|---|---|
-| [任务派发协议](agent-dispatcher.md) | 02、事件入口、09、执行槽释放回调 | 有效计划、修复消息、安全恢复或空闲槽 | 否，调度器内部控制能力 |
-| [10-test-case-recorder.md](scheduled-tasks/10-test-case-recorder.md) | 总调度聚合06/08的新证据 | 新用例或实际验收结果变化 | 否，记录职责 |
-| [11-issue-log-recorder.md](scheduled-tasks/11-issue-log-recorder.md) | 总调度聚合08/09/CI异常 | 新异常或处理结果变化 | 否，记录职责 |
+02保存有效计划 → 03下一轮读取并核验归属 → 修改/提交/推送 → 04/05各自检查 → 有问题时保存修复记录 → 03下一轮恢复同一分支 → 当前HEAD证据完整后06重核合并。
 
-## 周期选择理由
+CI等待时03保存检查点并结束本轮；下次定时运行再次查询真实状态。05直接处理轮询发现的CI失败，不等待Webhook，也不需要独立事件消费者。无工作时各任务尽快结束，不加载整个仓库历史。
 
-Issue与规划每30分钟足以补偿新需求变化，避免每轮全仓分析。PR审查每15分钟缩短修复反馈等待，但只对实质变化调用模型。CI和合并每10分钟降低结果传递延迟；失败Webhook走即时入口，CI轮询仍负责漏收补偿。看板、观察与恢复每30分钟提供常规对账，现场worker通过心跳和检查点提供更细粒度安全信号。
+## 记录职责与可选参考
 
-记录没有新事实就无需运行；按变化回调比每日或每30分钟空跑更合理。安全检查与运行报告沿用角色已有职责，不单独增设定时任务。
+| 文件 | 使用方式 | 基础模式是否独立注册 |
+|---|---|---|
+| [10验收记录](scheduled-tasks/10-test-case-recorder.md) | 08读取此职责并核验真实证据后更新指定文件 | 否 |
+| [11问题日志](scheduled-tasks/11-issue-log-recorder.md) | 08读取此职责并按新异常更新指定文件 | 否 |
+| [工作选择与互斥](agent-dispatcher.md) | 03在定时任务内部选择工作及核验唯一写入权 | 否 |
+| [外部CI事件参考](event-tasks/ci-failure-handler.md) | 仅未来已授权且能力已核验时加速05同一处理流程 | 否，可选增强 |
 
-## 调度与成本规则
+## 实施边界
 
-- 所有入口中文命名、无人值守，不等待普通人工确认。
-- 先读取增量游标和持久化状态，再判断有无变化；无变化时不调用模型、不评论、不重复写入。
-- 轮询默认最多深处理5个变化对象，余项保存到持久队列；分页和对账游标只能在相应对象持久化后推进，防止漏项。
-- 首次启动、检查点丢失或无法证明增量完整时做分页全量对账；不把未扫描范围当成无变化。
-- 缓存用于减少重复分析；任何写操作，尤其合并，必须重新读取GitHub真实状态。
-- 默认2个开发执行槽；等待CI不占模型槽。修复预算、原子租约和文件归属见派发协议。
-- 启动任务与新Webhook接收必须使用既有能力和授权；缺持久化、原子锁或最小权限时阻塞相应写操作。
-- 不承诺“10分钟内必定合并”或“30分钟内必定恢复”；这些是触发周期，不是完成时限。
+- 使用DeepSeek Harness实际提供的定时配置、GitHub访问、运行状态与持久化能力；没有能力时标记具体限制，不虚构新服务或事件接口。
+- 写操作前重新读取GitHub状态并核验互斥。首次启动或检查点丢失时完整分页对账，不能丢弃批次外对象。
+- 角色职责与最小权限不变：03开发，04审查，05CI诊断，06合并；08仅可额外按10/11边界维护授权记录文件。
+- 定时启动本身可能有模型成本；无变化时缩短执行，不承诺零模型调用。
+- 本PR只完成Prompt文档，不在Harness中实际注册任务，不修改CI，不配置Webhook或部署其他系统。
